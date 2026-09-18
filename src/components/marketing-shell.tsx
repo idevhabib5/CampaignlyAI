@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 
 const links = [
@@ -8,12 +9,40 @@ const links = [
   { href: "/contact", label: "Contact" },
 ];
 
+export function BrandMark({
+  className = "",
+  showWordmark = true,
+  size = 32,
+}: {
+  className?: string;
+  showWordmark?: boolean;
+  size?: number;
+}) {
+  return (
+    <span className={`inline-flex items-center gap-2 ${className}`}>
+      <Image
+        src="/brand/logo-mark.svg"
+        alt=""
+        width={size}
+        height={size}
+        className="shrink-0"
+        priority
+      />
+      {showWordmark && (
+        <span className="font-display text-xl font-semibold tracking-tight text-teal-900 sm:text-2xl">
+          Campaignly<span className="text-orange-600">.AI</span>
+        </span>
+      )}
+    </span>
+  );
+}
+
 export function MarketingNav() {
   return (
     <header className="sticky top-0 z-40 border-b border-teal-900/10 bg-[#ecfdf5]/85 backdrop-blur-md">
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:px-6">
-        <Link href="/" className="font-display text-2xl font-semibold tracking-tight text-teal-900">
-          Campaignly<span className="text-orange-600">.AI</span>
+        <Link href="/" aria-label="Campaignly.AI home">
+          <BrandMark />
         </Link>
         <nav className="hidden items-center gap-6 md:flex">
           {links.map((l) => (
@@ -44,9 +73,12 @@ export function MarketingFooter() {
     <footer className="border-t border-[var(--line)] bg-teal-950 text-teal-50">
       <div className="mx-auto grid max-w-6xl gap-8 px-4 py-12 sm:px-6 md:grid-cols-4">
         <div className="md:col-span-2">
-          <div className="font-display text-xl font-semibold">
-            Campaignly<span className="text-orange-400">.AI</span>
-          </div>
+          <Link href="/" className="inline-flex items-center gap-2">
+            <Image src="/brand/logo-mark.svg" alt="" width={28} height={28} />
+            <span className="font-display text-xl font-semibold">
+              Campaignly<span className="text-orange-400">.AI</span>
+            </span>
+          </Link>
           <p className="mt-3 max-w-md text-sm text-teal-100/80">
             AI-powered Meta advertising automation for fitness, ecommerce, real estate, beauty,
             healthcare, education, and local services.

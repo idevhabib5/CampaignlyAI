@@ -16,6 +16,13 @@ export const metadata: Metadata = {
   title: "Campaignly.AI — AI Meta Advertising Automation",
   description:
     "Generate policy-compliant Meta ads, deploy campaigns, and nurture leads with WhatsApp AI.",
+  icons: {
+    icon: [
+      { url: "/brand/logo-mark.svg", type: "image/svg+xml" },
+      { url: "/favicon.png", type: "image/png" },
+    ],
+    apple: [{ url: "/apple-icon.png", type: "image/png" }],
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

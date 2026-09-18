@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
@@ -56,8 +57,11 @@ export function DashboardShell({
     <div className="min-h-screen bg-[var(--surface)] bg-dash-grid bg-grid">
       <div className="mx-auto flex min-h-screen max-w-[1440px]">
         <aside className="hidden w-64 shrink-0 border-r border-[var(--line)] bg-white/90 p-4 md:flex md:flex-col">
-          <Link href="/dashboard" className="font-display text-xl font-semibold text-teal-900">
-            Campaignly<span className="text-orange-600">.AI</span>
+          <Link href="/dashboard" className="inline-flex items-center gap-2">
+            <Image src="/brand/logo-mark.svg" alt="" width={28} height={28} />
+            <span className="font-display text-xl font-semibold text-teal-900">
+              Campaignly<span className="text-orange-600">.AI</span>
+            </span>
           </Link>
           <p className="mt-1 truncate text-xs text-slate-500">
             {user.businessName || (user.role === "ADMIN" ? "Platform Admin" : "Business workspace")}
@@ -104,8 +108,9 @@ export function DashboardShell({
         <div className="flex min-w-0 flex-1 flex-col">
           <header className="flex h-14 items-center justify-between border-b border-[var(--line)] bg-white/80 px-4 backdrop-blur md:px-6">
             <div className="md:hidden">
-              <Link href="/dashboard" className="font-display text-lg font-semibold text-teal-900">
-                Campaignly.AI
+              <Link href="/dashboard" className="inline-flex items-center gap-2">
+                <Image src="/brand/logo-mark.svg" alt="" width={24} height={24} />
+                <span className="font-display text-lg font-semibold text-teal-900">Campaignly.AI</span>
               </Link>
             </div>
             <div className="hidden text-sm text-slate-500 md:block">
