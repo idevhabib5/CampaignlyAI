@@ -1,3 +1,6 @@
+export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
+
 import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { handleApiError, jsonError, jsonOk } from "@/lib/api";

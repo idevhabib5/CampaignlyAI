@@ -111,6 +111,17 @@ npm run build
 npm start
 ```
 
+## Deploy on Vercel
+
+1. Import the GitHub repo in Vercel.
+2. Set environment variables:
+   - `DATABASE_URL` = `file:./dev.db`
+   - `JWT_SECRET` = any long random string
+   - `NEXT_PUBLIC_APP_URL` = your Vercel URL (e.g. `https://campaignlyai.vercel.app`)
+3. Deploy. The build runs `vercel-build` (generate Prisma client, create/seed SQLite, then `next build`).
+
+**Note:** SQLite on Vercel is fine for this POC demo (DB is seeded at build and copied to `/tmp` per cold start). Data writes are ephemeral on serverless — for production use Postgres/MongoDB.
+
 ## Core user journeys (demo script)
 
 ### Owner journey (Priority 1)

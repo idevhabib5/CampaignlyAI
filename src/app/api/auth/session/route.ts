@@ -1,3 +1,6 @@
+export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
+
 import { clearSessionCookie, getSession } from "@/lib/auth";
 import { handleApiError, jsonOk } from "@/lib/api";
 import { prisma } from "@/lib/db";
