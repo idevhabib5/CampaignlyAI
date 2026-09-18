@@ -1,0 +1,216 @@
+// Campaignly.AI POC data model
+// Production target per scope: MongoDB + Mongoose. SQLite used here for zero-config local demos.
+// Enum-like values stored as strings for SQLite compatibility.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  name         String
+  role         String   @default("OWNER") // OWNER | ADMIN
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  business       BusinessProfile?
+  creatives      AdCreative[]
+  mediaAssets    MediaAsset[]
+  campaigns      Campaign[]
+  leads          Lead[]
+  conversations  WhatsAppConversation[]
+  subscription   Subscription?
+  notifications  Notification[]
+}
+
+model BusinessProfile {
+  id                  String   @id @default(cuid())
+  userId              String   @unique
+  businessName        String
+  industry            String
+  category            String?
+  brandTone           String   @default("professional")
+  communicationStyle  String   @default("friendly")
+  targetAudience      String?
+  website             String?
+  location            String?
+  services            String?
+  brandColors         String?
+  logoUrl             String?
+  onboardingStep      Int      @default(1)
+  onboardingComplete  Boolean  @default(false)
+  aiRecommendations   String?
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model AdCreative {
+  id               String   @id @default(cuid())
+  userId           String
+  headline         String
+  primaryText      String
+  description      String?
+  cta              String   @default("Learn More")
+  variations       String?
+  audienceConfig   String?
+  complianceScore  Int      @default(85)
+  complianceNotes  String?
+  status           String   @default("draft")
+  templateId       String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  campaigns Campaign[]
+}
+
+model MediaAsset {
+  id           String   @id @default(cuid())
+  userId       String
+  filename     String
+  mimeType     String
+  mediaType    String
+  url          String
+  width        Int?
+  height       Int?
+  durationSec  Int?
+  brandApplied Boolean  @default(false)
+  captions     String?
+  notes        String?
+  createdAt    DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Campaign {
+  id              String   @id @default(cuid())
+  userId          String
+  adCreativeId    String?
+  name            String
+  objective       String   @default("LEAD_GENERATION")
+  status          String   @default("DRAFT") // DRAFT | PENDING_REVIEW | ACTIVE | PAUSED | COMPLETED | STOPPED
+  dailyBudget     Float    @default(20)
+  totalBudget     Float?
+  targeting       String?
+  metaCampaignId  String?
+  metaAdAccountId String?
+  facebookPageId  String?
+  impressions     Int      @default(0)
+  clicks          Int      @default(0)
+  conversions     Int      @default(0)
+  spend           Float    @default(0)
+  lastSyncedAt    DateTime?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  user       User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  adCreative AdCreative? @relation(fields: [adCreativeId], references: [id])
+  leads      Lead[]
+}
+
+model Lead {
+  id              String   @id @default(cuid())
+  userId          String
+  campaignId      String?
+  name            String
+  email           String?
+  phone           String?
+  source          String   @default("meta_lead_form")
+  status          String   @default("NEW") // NEW | CONTACTED | NURTURING | QUALIFIED | CONVERSION_READY | CONVERTED | LOST
+  score           Int      @default(0)
+  category        String?
+  notes           String?
+  engagementLevel String   @default("low")
+  lastActivityAt  DateTime @default(now())
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  user         User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  campaign     Campaign?             @relation(fields: [campaignId], references: [id])
+  conversation WhatsAppConversation?
+}
+
+model WhatsAppConversation {
+  id                 String   @id @default(cuid())
+  userId             String
+  leadId             String   @unique
+  status             String   @default("AI_ACTIVE") // AI_ACTIVE | MANUAL | CLOSED
+  leadScore          Int      @default(0)
+  sentiment          String   @default("neutral")
+  readyForConversion Boolean  @default(false)
+  lastMessageAt      DateTime @default(now())
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  user     User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  lead     Lead              @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  messages WhatsAppMessage[]
+}
+
+model WhatsAppMessage {
+  id             String   @id @default(cuid())
+  conversationId String
+  direction      String
+  sender         String
+  content        String
+  createdAt      DateTime @default(now())
+
+  conversation WhatsAppConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+}
+
+model Subscription {
+  id                   String    @id @default(cuid())
+  userId               String    @unique
+  plan                 String    @default("TRIAL") // TRIAL | STARTER | PRO | AGENCY
+  status               String    @default("TRIALING") // TRIALING | ACTIVE | PAST_DUE | CANCELED
+  stripeCustomerId     String?
+  stripeSubscriptionId String?
+  currentPeriodEnd     DateTime?
+  trialEndsAt          DateTime?
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  type      String
+  title     String
+  message   String
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model ContactEnquiry {
+  id        String   @id @default(cuid())
+  name      String
+  email     String
+  company   String?
+  message   String
+  source    String   @default("contact")
+  createdAt DateTime @default(now())
+}
+
+model DiagnosticResult {
+  id              String   @id @default(cuid())
+  businessName    String
+  industry        String
+  email           String
+  monthlySpend    Float?
+  score           Int
+  recommendations String
+  createdAt       DateTime @default(now())
+}
