@@ -15,10 +15,12 @@
     "setup": "prisma db push && tsx prisma/seed.ts"
   },
   "dependencies": {
+    "@google/generative-ai": "^0.24.1",
     "@prisma/client": "5.22.0",
     "bcryptjs": "^3.0.3",
     "clsx": "^2.1.1",
     "date-fns": "^4.4.0",
+    "groq-sdk": "^1.6.0",
     "jose": "^6.2.12",
     "lucide-react": "^1.47.0",
     "next": "15.5.25",

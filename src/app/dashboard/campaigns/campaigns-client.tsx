@@ -27,9 +27,11 @@ export default function CampaignsPage() {
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [creatives, setCreatives] = useState<Creative[]>([]);
   const [meta, setMeta] = useState<{
+    connected: boolean;
     adAccounts: Array<{ id: string; name: string }>;
     pages: Array<{ id: string; name: string }>;
   } | null>(null);
+  const [metaConnected, setMetaConnected] = useState(false);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
@@ -63,10 +65,28 @@ export default function CampaignsPage() {
       }))
     );
     setMeta(mData.connection);
+    setMetaConnected(Boolean(mData.connection?.connected));
     if (!form.adCreativeId && aData.creatives?.[0]) {
       setForm((f) => ({ ...f, adCreativeId: aData.creatives[0].id }));
     }
     setLoading(false);
+  }
+
+  async function connectMeta() {
+    setBusy(true);
+    setError("");
+    try {
+      const res = await fetch("/api/meta/connect", { method: "POST" });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Meta connect failed");
+      setMeta(data.connection);
+      setMetaConnected(true);
+      setMessage("Meta account connected (mock OAuth). You can deploy campaigns now.");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Meta connect failed");
+    } finally {
+      setBusy(false);
+    }
   }
 
   useEffect(() => {
@@ -144,7 +164,7 @@ export default function CampaignsPage() {
     <div>
       <PageHeader
         title="Campaigns"
-        description="Create, deploy, pause, and sync Meta lead-generation campaigns."
+        description="Connect Meta (mock), then create, deploy, pause, and sync lead-generation campaigns."
         actions={
           <button className="btn-primary" onClick={() => setShowForm((s) => !s)}>
             {showForm ? "Close form" : "Create campaign"}
@@ -152,6 +172,19 @@ export default function CampaignsPage() {
         }
       />
 
+      <div className="card mb-4 flex flex-wrap items-center justify-between gap-3 p-4">
+        <div>
+          <div className="text-sm font-semibold text-teal-950">Meta connection</div>
+          <div className="text-xs text-slate-500">
+            {metaConnected
+              ? "Connected (mock) — ad accounts and pages ready for deploy."
+              : "Connect once, then deploy from this screen. No separate Meta page in the MVP."}
+          </div>
+        </div>
+        <button className="btn-secondary" disabled={busy || metaConnected} onClick={connectMeta}>
+          {metaConnected ? "Connected" : busy ? "Connecting..." : "Connect Meta"}
+        </button>
+      </div>
       {message && (
         <div className="mb-4 rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-800">{message}</div>
       )}

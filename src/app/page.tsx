@@ -8,7 +8,7 @@ export default function HomePage() {
     <div className="min-h-screen bg-hero-mesh">
       <MarketingNav />
       <section className="relative overflow-hidden">
-        <div className="mx-auto grid max-w-6xl gap-10 px-4 pb-20 pt-16 sm:px-6 lg:grid-cols-2 lg:items-center lg:pt-24">
+        <div className="mx-auto grid max-w-6xl gap-10 px-4 pb-16 pt-14 sm:px-6 lg:grid-cols-2 lg:items-center lg:pt-20">
           <div>
             <div className="mb-5 flex items-center gap-3">
               <Image
@@ -23,23 +23,23 @@ export default function HomePage() {
               </p>
             </div>
             <h1 className="max-w-xl text-balance text-2xl font-semibold leading-snug text-teal-900 sm:text-3xl">
-              Launch Meta ads, capture leads, and nurture them on WhatsApp — without Ads Manager
-              expertise.
+              From blank business profile to a conversion-ready Meta lead — in one flow.
             </h1>
             <p className="mt-4 max-w-lg text-base text-slate-600">
-              Guided onboarding, RAG-enhanced ad generation, automated Meta deployment, and an AI
-              WhatsApp agent that tells you when a lead is ready to convert.
+              Full-scope demo: onboard, AI ads, media, Meta campaigns, leads, WhatsApp nurture,
+              billing, and admin — all with realistic mocks (no API keys).
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
-              <Link href="/register" className="btn-primary">
-                Start free trial <ArrowRight className="h-4 w-4" />
+              <Link href="/login" className="btn-primary">
+                Try the demo <ArrowRight className="h-4 w-4" />
               </Link>
               <Link href="/diagnostic" className="btn-secondary">
-                Free campaign diagnostic
+                Free diagnostic
               </Link>
             </div>
-            <p className="mt-4 text-xs text-slate-500">
-              Demo: owner@fitstudio.demo / demo1234
+            <p className="mt-4 rounded-lg bg-white/70 px-3 py-2 text-xs text-slate-600 ring-1 ring-teal-900/10">
+              Demo login: <span className="font-semibold text-teal-900">owner@fitstudio.demo</span> /{" "}
+              <span className="font-semibold text-teal-900">demo1234</span>
             </p>
           </div>
 
@@ -54,9 +54,9 @@ export default function HomePage() {
                 sizes="(max-width: 1024px) 100vw, 560px"
               />
               <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-teal-950/90 via-teal-950/45 to-transparent p-6 pt-20 text-white sm:p-8">
-                <div className="text-sm font-medium text-teal-100">Primary workflow</div>
+                <div className="text-sm font-medium text-teal-100">Complete product surface</div>
                 <div className="mt-2 font-display text-2xl font-semibold sm:text-3xl">
-                  Onboard → Generate ads → Deploy to Meta → Nurture leads
+                  Ads · Media · Meta · Leads · WhatsApp · Billing
                 </div>
               </div>
             </div>
@@ -64,36 +64,33 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section id="features" className="border-t border-teal-900/10 bg-white py-20">
+      <section id="how-it-works" className="border-t border-teal-900/10 bg-white py-16">
         <div className="mx-auto max-w-6xl px-4 sm:px-6">
-          <h2 className="font-display text-3xl font-semibold text-teal-950">
-            Built for the full ad lifecycle
-          </h2>
+          <h2 className="font-display text-3xl font-semibold text-teal-950">How it works</h2>
           <p className="mt-2 max-w-2xl text-slate-600">
-            One platform for creative generation, campaign automation, lead management, and
-            conversion.
+            End-to-end lead machine for local businesses — every integration mocked for reliable demos.
           </p>
           <div className="mt-10 grid gap-6 md:grid-cols-2 lg:grid-cols-4">
             {[
               {
                 icon: Sparkles,
-                title: "AI ad intelligence",
-                body: "Industry-aware copy with mock RAG retrieval and Meta policy compliance scoring.",
+                title: "1. Generate ads",
+                body: "Templates, RAG insights, and Bradley Filter compliance (mock AI).",
               },
               {
                 icon: Megaphone,
-                title: "Meta automation",
-                body: "Connect ad accounts, deploy campaigns, pause/activate, and sync performance metrics.",
+                title: "2. Deploy campaign",
+                body: "Connect Meta, launch lead-gen, sync metrics (mock Graph API).",
               },
               {
                 icon: Users,
-                title: "Lead management",
-                body: "Sync Meta lead forms, search/filter prospects, and track conversion readiness.",
+                title: "3. Capture leads",
+                body: "Sync forms, conversion analytics, and activity timelines.",
               },
               {
                 icon: Bot,
-                title: "WhatsApp agent",
-                body: "Autonomous follow-ups, intent scoring, and owner alerts when leads are hot.",
+                title: "4. Nurture on WhatsApp",
+                body: "Intent scoring plus simulated follow-up job ticks.",
               },
             ].map((f) => (
               <div key={f.title} className="border-t-2 border-teal-700 pt-4">
@@ -106,17 +103,53 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section className="bg-teal-950 py-16 text-teal-50">
-        <div className="mx-auto flex max-w-6xl flex-col items-start justify-between gap-6 px-4 sm:flex-row sm:items-center sm:px-6">
-          <div>
-            <h2 className="font-display text-3xl font-semibold">Ready to see it work?</h2>
-            <p className="mt-2 text-teal-100/80">
-              Use the seeded fitness studio account for a full walkthrough.
-            </p>
+      <section className="border-t border-teal-900/10 bg-teal-950 py-16 text-white">
+        <div className="mx-auto max-w-6xl px-4 sm:px-6">
+          <h2 className="font-display text-3xl font-semibold">Results from demo studios</h2>
+          <p className="mt-2 max-w-xl text-teal-100/80">
+            Case-study style testimonials for stakeholder walkthroughs (sample data).
+          </p>
+          <div className="mt-10 grid gap-8 md:grid-cols-3">
+            {[
+              {
+                quote:
+                  "We went from blank profile to a conversion-ready lead in one afternoon — the WhatsApp intent panel is the closer.",
+                name: "Alex Rivera",
+                role: "Owner, Pulse Fit Studio",
+              },
+              {
+                quote:
+                  "Bradley Filter caught weak claims before we would have wasted spend. Compliance scores make reviews faster.",
+                name: "Priya Shah",
+                role: "Growth lead, Glow Beauty Bar",
+              },
+              {
+                quote:
+                  "Follow-up jobs mean nothing slips. Mock Meta sync still feels like a real ops dashboard for training.",
+                name: "Chris Nguyen",
+                role: "Agency operator",
+              },
+            ].map((t) => (
+              <blockquote key={t.name} className="border-t border-teal-700/60 pt-4">
+                <p className="text-sm leading-relaxed text-teal-50/95">&ldquo;{t.quote}&rdquo;</p>
+                <footer className="mt-4 text-sm">
+                  <div className="font-semibold text-white">{t.name}</div>
+                  <div className="text-teal-200/80">{t.role}</div>
+                </footer>
+              </blockquote>
+            ))}
           </div>
-          <Link href="/login" className="btn bg-orange-500 text-white hover:bg-orange-600">
-            Open demo dashboard
-          </Link>
+          <div className="mt-10 flex flex-wrap gap-3">
+            <Link href="/login" className="btn-primary bg-orange-500 hover:bg-orange-400">
+              Open demo dashboard
+            </Link>
+            <Link
+              href="/blog"
+              className="inline-flex items-center gap-2 rounded-lg border border-teal-600 px-4 py-2 text-sm font-medium text-teal-50 hover:bg-teal-900"
+            >
+              Read the blog
+            </Link>
+          </div>
         </div>
       </section>
       <MarketingFooter />

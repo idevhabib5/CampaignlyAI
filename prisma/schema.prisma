@@ -147,8 +147,13 @@ model WhatsAppConversation {
   leadId             String   @unique
   status             String   @default("AI_ACTIVE") // AI_ACTIVE | MANUAL | CLOSED
   leadScore          Int      @default(0)
-  sentiment          String   @default("neutral")
+  sentiment          String   @default("neutral") // positive | neutral | negative
+  intent             String   @default("unknown") // purchase_ready | pricing | scheduling | information | objection | rejection | unknown
+  intentConfidence   Int      @default(0)
+  scoringBreakdown   String?  // JSON: signals + contribution breakdown
   readyForConversion Boolean  @default(false)
+  escalateToOwner    Boolean  @default(false)
+  followUpDelayHours Int      @default(24)
   lastMessageAt      DateTime @default(now())
   createdAt          DateTime @default(now())
   updatedAt          DateTime @updatedAt
@@ -215,4 +220,24 @@ model DiagnosticResult {
   score           Int
   recommendations String
   createdAt       DateTime @default(now())
+}
+
+model PasswordResetToken {
+  id        String   @id @default(cuid())
+  email     String
+  token     String   @unique
+  expiresAt DateTime
+  used      Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
+
+model ReferralCampaign {
+  id        String   @id @default(cuid())
+  name      String
+  code      String   @unique
+  channel   String
+  clicks    Int      @default(0)
+  signups   Int      @default(0)
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
 }

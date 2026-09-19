@@ -1,207 +1,118 @@
-# Campaignly.AI — Functional POC
+# Campaignly.AI — Full-Scope Demo Product
 
-AI-powered SaaS proof of concept for automating Meta (Facebook/Instagram) advertising, lead management, and WhatsApp nurturing — based on the attached project Scope of Work (FA23-BCS-045 / FA23-BCS-116).
+Complete SOW-aligned demo covering **all 10 modules** with **realistic mocks** (OpenAI, Meta, Stripe, WhatsApp, S3, Redis/BullMQ, Google OAuth). No paid API keys required.
 
-## Product / POC overview
+Stack: **Next.js App Router + Prisma SQLite** (Vercel-capable). Service interfaces in `src/lib/services/*` can later swap to live APIs.
 
-Campaignly.AI helps SMBs across fitness, ecommerce, real estate, beauty, healthcare, education, and local services:
+## End-to-end demo script (~12–15 minutes)
 
-1. Onboard a business (brand, industry, audience)
-2. Generate AI Meta ad copy with compliance scoring
-3. Deploy & manage campaigns (Meta Graph API — mocked)
-4. Sync & manage leads
-5. Nurture leads via WhatsApp AI and get conversion-ready alerts
-6. Manage subscriptions (Stripe — mocked)
-7. Operate the platform from an admin dashboard
+### Marketing & auth (Modules 9–10)
+1. Open `/` — brand hero, how-it-works, testimonials/case studies.
+2. Visit `/diagnostic` — submit the campaign diagnostic (stores result via `/api/marketing`).
+3. Skim `/blog` — static posts list.
+4. `/login` → **Continue with Google** (mock OAuth → `google.demo@campaignly.ai`) or sign in as owner.
+5. Optional: **Forgot password** → copy in-app reset link → `/reset-password` → update password locally.
 
-This is a **working demonstrable POC**, not a wireframe prototype: forms, validation, persistence, role-based access, and end-to-end data flow are implemented.
+### Owner workspace (Modules 1–7)
+6. Sign in: `owner@fitstudio.demo` / `demo1234`.
+7. **Overview** — metrics + checklist.
+8. **Ads** — pick a template from the gallery → Generate → review **RAG insights** + **Bradley Filter** panel → Deploy to campaign.
+9. **Media** — upload mock asset, apply brand/captions/placements.
+10. **Meta** — mock OAuth connect, accounts/pages.
+11. **Campaigns** — create/deploy, sync metrics, pause.
+12. **Leads** — campaign conversion table + activity timeline; **Refresh from Meta**.
+13. **WhatsApp** — intent presets → scoring panel; click **Run follow-up jobs** (mock BullMQ tick).
+14. **Billing** — plan cards, mock checkout/portal; soft gates on trial.
+15. **Settings** — profile edit / plan badge.
 
-## Implemented scope (by module)
+### Admin (Module 8)
+16. Sign in: `admin@campaignly.ai` / `demo1234` → `/admin`.
+17. Review Meta health, job queue, AI usage, enquiries, referrals, high-performing ads, user plan actions.
 
-| Module | Status |
-|--------|--------|
-| 1 Business Onboarding & Brand Setup | Implemented (multi-step, resume, AI tips, edit) |
-| 2 AI Advertisement & Content Generation | Implemented (mock RAG + compliance) |
-| 3 AI Media Editing & Creative Automation | Partial (upload, brand flag, captions, placements — mock S3) |
-| 4 Meta Campaign Automation | Implemented (mock OAuth, deploy, pause/activate/stop, sync, duplicate) |
-| 5 Lead Management System | Implemented (sync, search/filter, detail, status) |
-| 6 WhatsApp Lead Nurturing | Implemented (AI replies, scoring, takeover, alerts) |
-| 7 Subscription & Billing | Implemented (plans, mock checkout/portal/webhook) |
-| 8 Admin Dashboard | Implemented (users, metrics, Meta health, jobs, enquiries) |
-| 9 Marketing Website | Implemented (landing, pricing, diagnostic, about, contact, privacy, terms) |
-| 10 Authentication & User Management | Implemented (email/password + JWT cookies, roles) |
-
-**Not in POC (per scope limits or deferred):** Google OAuth, real OpenAI/Pinecone, real Meta/Stripe/WhatsApp/S3, Redis/BullMQ workers, AWS deploy, blog CMS, advanced A/B testing (LI-4).
-
-## Architecture
-
-```
-Next.js 15 (App Router)
-├── Marketing pages (/ , /pricing, /diagnostic, ...)
-├── Auth (/login, /register)
-├── Onboarding wizard (/onboarding)
-├── Owner dashboard (/dashboard/*)
-├── Admin ops (/admin)
-└── REST API routes (/api/*)
-       ├── Prisma ORM + SQLite (POC)
-       └── Service abstractions (AI, Meta, Stripe, WhatsApp, Media)
-```
-
-**Assumption:** Scope targets Express + MongoDB + separate Next.js dashboard + Vite marketing site. For a zero-config stakeholder demo, this POC consolidates into one Next.js app with SQLite. Service interfaces are isolated so production can split into Express + MongoDB and swap mocks for real SDKs.
-
-## Tech stack
-
-- Next.js 15, React 19, TypeScript, Tailwind CSS
-- Prisma + SQLite (production target: MongoDB/Mongoose)
-- JWT sessions (`jose`) + bcrypt password hashing
-- Zod validation
-- Lucide icons
-
-## Installation
-
-```bash
-npm install
-cp .env.example .env
-npm run setup
-```
-
-`npm run setup` pushes the schema and seeds demo data.
-
-## Environment variables
-
-See `.env.example`:
-
-| Variable | Purpose |
-|----------|---------|
-| `DATABASE_URL` | Prisma SQLite path (`file:./dev.db`) |
-| `JWT_SECRET` | Session signing secret |
-| `NEXT_PUBLIC_APP_URL` | App URL |
-| `USE_MOCK_*` | Flags documenting mock mode (services are mock by default) |
-
-Optional real keys (`OPENAI_API_KEY`, `META_*`, `STRIPE_*`) are unused until mocks are replaced.
-
-## Database setup
-
-```bash
-npm run db:push      # apply schema
-npm run db:seed      # seed demo data
-npm run db:reset     # wipe + reseed
-```
+Fresh path: **Register** → 3-step onboarding → same dashboard.
 
 ## Demo credentials
 
 | Role | Email | Password |
 |------|-------|----------|
-| Business owner (full demo data) | `owner@fitstudio.demo` | `demo1234` |
+| Owner (seeded fitness studio) | `owner@fitstudio.demo` | `demo1234` |
 | Admin | `admin@campaignly.ai` | `demo1234` |
 | Incomplete onboarding | `newbie@demo.com` | `demo1234` |
+| Google mock (first click) | `google.demo@campaignly.ai` | (OAuth only) |
 
-## How to run
+## Modules covered
+
+| # | Module | UI path |
+|---|--------|---------|
+| 1 | Onboarding | `/onboarding`, Settings profile |
+| 2 | AI Ads | `/dashboard/ads` (templates + RAG/Bradley) |
+| 3 | Media | `/dashboard/media` |
+| 4 | Meta Campaigns | `/dashboard/meta` + `/dashboard/campaigns` |
+| 5 | Leads | `/dashboard/leads` (analytics + activity) |
+| 6 | WhatsApp | `/dashboard/whatsapp` (scoring + follow-up jobs) |
+| 7 | Billing | `/dashboard/billing` |
+| 8 | Admin | `/admin` |
+| 9 | Marketing | `/`, `/pricing`, `/diagnostic`, `/blog`, contact/legal |
+| 10 | Auth | Login, register, Google mock, password reset |
+
+## Run locally
 
 ```bash
+npm install
+cp .env.example .env
+npm run setup
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000).
+Open http://localhost:3000
 
-Production-like:
+`npm run setup` typically runs Prisma generate, db push, and seed.
 
-```bash
-npm run build
-npm start
+## Vercel
+
+Environment variables:
+
+- `DATABASE_URL` = `file:./dev.db`
+- `JWT_SECRET` = long random string
+- `NEXT_PUBLIC_APP_URL` = your Vercel URL
+
+Build uses `vercel-build` (Prisma generate → db push → seed → next build). SQLite is seeded at build and copied to `/tmp` on serverless cold starts (writes are ephemeral).
+
+## Tech stack
+
+Next.js 15 · React 19 · TypeScript · Tailwind · Prisma + SQLite · JWT auth (jose + bcrypt)
+
+## Architecture
+
 ```
-
-## Deploy on Vercel
-
-1. Import the GitHub repo in Vercel.
-2. Set environment variables:
-   - `DATABASE_URL` = `file:./dev.db`
-   - `JWT_SECRET` = any long random string
-   - `NEXT_PUBLIC_APP_URL` = your Vercel URL (e.g. `https://campaignlyai.vercel.app`)
-3. Deploy. The build runs `vercel-build` (generate Prisma client, create/seed SQLite, then `next build`).
-
-**Note:** SQLite on Vercel is fine for this POC demo (DB is seeded at build and copied to `/tmp` per cold start). Data writes are ephemeral on serverless — for production use Postgres/MongoDB.
-
-## Core user journeys (demo script)
-
-### Owner journey (Priority 1)
-
-1. Log in as `owner@fitstudio.demo` / `demo1234`
-2. **Overview** — see metrics, campaigns, conversion-ready notification
-3. **Ad Generator** — generate new AI ad variations + compliance score
-4. **Campaigns** — deploy creative to Meta (mock), pause/activate, sync metrics
-5. **Leads** — search/filter, open detail, **Refresh from Meta**
-6. **WhatsApp AI** — simulate lead replies, watch score rise, conversion-ready alert; try manual takeover
-7. **Billing** — switch plans via mock Stripe checkout
-8. **Media / Meta Connect** — upload mock assets; reconnect Meta OAuth
-
-### New user journey
-
-1. Register → onboarding wizard (4 steps) → dashboard
-
-### Admin journey
-
-1. Log in as `admin@campaignly.ai`
-2. Open `/admin` — platform metrics, user plan actions, enquiries, Meta health
-
-### Marketing
-
-1. Landing → Pricing → Campaign diagnostic → Contact enquiry (visible in admin)
-
-## Implemented integrations
-
-Service interfaces live under `src/lib/services/`:
-
-| Integration | File | POC behavior |
-|-------------|------|--------------|
-| AI / RAG / Bradley Filter | `ai.ts` | Industry templates + mock RAG insights + compliance notes |
-| Meta Graph API | `meta.ts` | Mock OAuth accounts/pages, deploy, metric sync, health |
-| Stripe | `stripe.ts` | Mock checkout session + portal + webhook apply |
-| WhatsApp agent | `whatsapp.ts` | Intent scoring, replies, conversion readiness |
-| AWS S3 / media | `media.ts` | Mock upload URLs + placement presets |
+Next.js App Router
+├── Marketing (/ , /pricing, /diagnostic, /blog, /contact, …)
+├── Auth (email/password, mock Google, password reset)
+├── Onboarding
+├── Dashboard (Overview · Ads · Campaigns · Media · Leads · WhatsApp · Meta · Billing · Settings)
+├── Admin (metrics · Meta health · jobs · AI usage · referrals · ads dataset)
+└── /api/* + src/lib/services/* (mocks)
+```
 
 ## Mocked integrations
 
-All external services above are **explicitly mocked**. Comments in each service file mark them as mocks. No API keys are required to demo.
+| Service | File | Behavior |
+|---------|------|----------|
+| AI / RAG / Bradley | `src/lib/services/ai.ts` | Ad copy, variations, compliance |
+| Meta Graph | `src/lib/services/meta.ts` | OAuth, deploy, sync, health |
+| WhatsApp | `src/lib/services/whatsapp.ts` | Intent/sentiment scoring, follow-ups |
+| Stripe | `src/lib/services/stripe.ts` | Checkout, portal, webhooks stubs |
+| Media / S3 | `src/lib/services/media.ts` | Upload, brand, caption, resize stubs |
+| Jobs | WhatsApp + Admin | Mock BullMQ follow-up ticks |
+| Google OAuth | `/api/auth` `action: google` | Creates/logs in demo Google user |
 
-## Known limitations
+## Explicitly deferred
 
-- SQLite instead of MongoDB; single Next.js process instead of Express + Redis/BullMQ
-- Media “upload” does not store binary files (placeholder URLs)
-- Lead “encryption” is not production-grade crypto (scope FE-3 deferred)
-- Google OAuth, email password-reset, and real WhatsApp webhooks not wired
-- Subscription feature gating is soft (plan displayed; hard locks minimal)
-- Meta approval cannot be guaranteed (LI-2) — mocked as `PENDING_REVIEW` then activatable
+- Real OpenAI, Meta Graph OAuth, Stripe keys, WhatsApp Cloud API, AWS S3
+- Real Redis/BullMQ workers
+- Express API + MongoDB split
+- True video editing engine (UI simulates trim/caption/resize)
 
-## Assumptions (ambiguous scope)
+## Scope note
 
-1. **Single web app** is acceptable for POC vs three deployables.
-2. **SQLite** is acceptable locally; schema maps cleanly to future Mongo collections.
-3. **Fitness-seeded demo** represents multi-industry capability (generator is industry-aware).
-4. **“Bradley Filter”** interpreted as a compliance scoring/policy checklist layer over generated ads.
-5. **Video editing** reduced to mock captions/brand flags/placement metadata rather than a full editor.
-
-## Recommended next steps toward production
-
-1. Split API into Express service; adopt MongoDB + Mongoose
-2. Wire OpenAI + Pinecone RAG with real Meta policy corpus
-3. Implement Meta OAuth + Marketing API campaign create
-4. Stripe Checkout + webhooks with real price IDs
-5. WhatsApp Business Cloud API + BullMQ follow-up jobs
-6. S3 uploads + real media processing pipeline
-7. Harden PII encryption, RBAC, audit logs, and CI/CD (Docker/AWS)
-
-## Project structure (high level)
-
-```
-prisma/                 schema + seed
-src/app/                pages + API routes
-src/components/         UI shells
-src/lib/auth.ts         JWT auth
-src/lib/db.ts           Prisma client
-src/lib/services/       mockable integrations
-```
-
-## License / academic note
-
-Built as a functional POC for academic demonstration of the Campaignly.AI scope. Not a commercial release.
+Based on the Campaignly.AI project proposal (FA23-BCS-045 / FA23-BCS-116). This full-scope demo proves every module’s UI and data flow against SQLite; production would replace mocks with live credentials and optional service split.

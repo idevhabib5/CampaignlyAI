@@ -19,30 +19,59 @@ export default async function AdminPage() {
   const user = await prisma.user.findUnique({ where: { id: session.id } });
   if (!user) redirect("/login");
 
-  const [users, campaigns, leads, creatives, recentUsers, enquiries, metaHealth, jobs] =
-    await Promise.all([
-      prisma.user.count(),
-      prisma.campaign.count(),
-      prisma.lead.count(),
-      prisma.adCreative.count(),
-      prisma.user.findMany({
-        orderBy: { createdAt: "desc" },
-        take: 20,
-        select: {
-          id: true,
-          name: true,
-          email: true,
-          role: true,
-          createdAt: true,
-          subscription: true,
-          business: { select: { businessName: true, industry: true, onboardingComplete: true } },
-          _count: { select: { campaigns: true, leads: true, creatives: true } },
-        },
-      }),
-      prisma.contactEnquiry.findMany({ orderBy: { createdAt: "desc" }, take: 8 }),
-      checkMetaApiHealth(),
-      processScheduledFollowUps(),
-    ]);
+  const [
+    users,
+    campaigns,
+    leads,
+    creatives,
+    mediaCount,
+    messages,
+    diagnostics,
+    recentUsers,
+    enquiries,
+    referrals,
+    highPerformingAds,
+  ] = await Promise.all([
+    prisma.user.count(),
+    prisma.campaign.count(),
+    prisma.lead.count(),
+    prisma.adCreative.count(),
+    prisma.mediaAsset.count(),
+    prisma.whatsAppMessage.count(),
+    prisma.diagnosticResult.count(),
+    prisma.user.findMany({
+      orderBy: { createdAt: "desc" },
+      take: 20,
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        role: true,
+        createdAt: true,
+        subscription: true,
+        business: { select: { businessName: true, industry: true, onboardingComplete: true } },
+        _count: { select: { campaigns: true, leads: true, creatives: true } },
+      },
+    }),
+    prisma.contactEnquiry.findMany({ orderBy: { createdAt: "desc" }, take: 8 }),
+    prisma.referralCampaign.findMany({ orderBy: { createdAt: "desc" } }),
+    prisma.adCreative.findMany({
+      where: { complianceScore: { gte: 85 } },
+      orderBy: { complianceScore: "desc" },
+      take: 8,
+      select: {
+        id: true,
+        headline: true,
+        complianceScore: true,
+        templateId: true,
+        status: true,
+        user: { select: { email: true } },
+      },
+    }),
+  ]);
+
+  const metaHealth = await checkMetaApiHealth();
+  const jobs = await processScheduledFollowUps();
 
   return (
     <DashboardShell
@@ -50,35 +79,145 @@ export default async function AdminPage() {
     >
       <PageHeader
         title="Admin operations"
-        description="User management, platform metrics, Meta health, and background job status."
+        description="Platform metrics, Meta health, job queue, AI usage, referrals, and high-performing ads."
       />
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard label="Users" value={users} />
         <StatCard label="Campaigns" value={campaigns} />
         <StatCard label="Leads" value={leads} />
-        <StatCard label="AI creatives" value={creatives} />
+        <StatCard label="Ads generated" value={creatives} />
       </div>
 
-      <div className="mt-6 grid gap-6 lg:grid-cols-3">
+      <div className="mt-6 grid gap-4 lg:grid-cols-3">
         <div className="card p-5">
           <h2 className="font-semibold text-teal-950">Meta API health</h2>
-          <p className="mt-2 text-sm text-slate-600">
-            Status: <span className="font-semibold text-emerald-700">{metaHealth.status}</span>
+          <div className="mt-3 flex items-center gap-2">
+            <StatusBadge status={metaHealth.status === "healthy" ? "ACTIVE" : "PAUSED"} />
+            <span className="text-sm text-slate-600">
+              {metaHealth.mock ? "Mock Graph API" : "Live Graph API"}
+            </span>
+          </div>
+          <p className="mt-2 text-xs text-slate-500">
+            Latency {metaHealth.latencyMs ?? "—"}ms
+            {metaHealth.lastError ? ` · ${metaHealth.lastError}` : ""}
           </p>
-          <p className="text-sm text-slate-600">Latency: {metaHealth.latencyMs}ms</p>
-          <p className="mt-2 text-xs text-slate-500">Mocked health check for POC.</p>
         </div>
         <div className="card p-5">
-          <h2 className="font-semibold text-teal-950">Background jobs</h2>
-          <p className="mt-2 text-sm text-slate-600">{jobs.note}</p>
-          <p className="text-xs text-slate-500">Processed this tick: {jobs.processed}</p>
+          <h2 className="font-semibold text-teal-950">Job queue (mock BullMQ)</h2>
+          <ul className="mt-3 space-y-2 text-sm text-slate-700">
+            <li className="flex justify-between gap-2">
+              <span>WhatsApp follow-ups</span>
+              <span className="text-xs text-slate-500">processed {jobs.processed}</span>
+            </li>
+            <li className="flex justify-between gap-2">
+              <span>Meta metrics sync</span>
+              <span className="text-xs text-slate-500">idle</span>
+            </li>
+            <li className="flex justify-between gap-2">
+              <span>Lead form ingest</span>
+              <span className="text-xs text-slate-500">idle</span>
+            </li>
+          </ul>
+          <p className="mt-3 text-xs text-slate-500">{jobs.note}</p>
         </div>
         <div className="card p-5">
-          <h2 className="font-semibold text-teal-950">AI usage</h2>
-          <p className="mt-2 text-sm text-slate-600">{creatives} ad generations stored</p>
-          <p className="text-xs text-slate-500">OpenAI/Pinecone mocked via local intelligence layer.</p>
+          <h2 className="font-semibold text-teal-950">AI usage (mock)</h2>
+          <dl className="mt-3 space-y-2 text-sm">
+            <div className="flex justify-between">
+              <dt className="text-slate-500">Creatives</dt>
+              <dd className="font-medium">{creatives}</dd>
+            </div>
+            <div className="flex justify-between">
+              <dt className="text-slate-500">WhatsApp messages</dt>
+              <dd className="font-medium">{messages}</dd>
+            </div>
+            <div className="flex justify-between">
+              <dt className="text-slate-500">Media assets</dt>
+              <dd className="font-medium">{mediaCount}</dd>
+            </div>
+            <div className="flex justify-between">
+              <dt className="text-slate-500">Diagnostics</dt>
+              <dd className="font-medium">{diagnostics}</dd>
+            </div>
+          </dl>
         </div>
+      </div>
+
+      <div className="mt-6 grid gap-6 lg:grid-cols-2">
+        <div className="card overflow-hidden">
+          <div className="border-b border-[var(--line)] px-5 py-4 font-semibold text-teal-950">
+            Contact enquiries
+          </div>
+          {enquiries.length === 0 ? (
+            <div className="p-5 text-sm text-slate-500">No enquiries yet.</div>
+          ) : (
+            <ul className="divide-y divide-[var(--line)]">
+              {enquiries.map((e) => (
+                <li key={e.id} className="px-5 py-3 text-sm">
+                  <div className="font-medium">{e.name}</div>
+                  <div className="text-xs text-slate-500">
+                    {e.email} · {e.company || "—"} · {e.source}
+                  </div>
+                  <p className="mt-1 text-slate-700">{e.message}</p>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+        <div className="card overflow-hidden">
+          <div className="border-b border-[var(--line)] px-5 py-4 font-semibold text-teal-950">
+            Referral campaigns
+          </div>
+          {referrals.length === 0 ? (
+            <div className="p-5 text-sm text-slate-500">No referral campaigns seeded.</div>
+          ) : (
+            <ul className="divide-y divide-[var(--line)]">
+              {referrals.map((r) => (
+                <li key={r.id} className="flex items-center justify-between gap-3 px-5 py-3 text-sm">
+                  <div>
+                    <div className="font-medium">{r.name}</div>
+                    <div className="text-xs text-slate-500">
+                      {r.code} · {r.channel}
+                    </div>
+                  </div>
+                  <div className="text-right text-xs text-slate-600">
+                    <div>{r.clicks} clicks</div>
+                    <div>{r.signups} signups</div>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      </div>
+
+      <div className="card mt-6 overflow-x-auto">
+        <div className="border-b border-[var(--line)] px-5 py-4 font-semibold text-teal-950">
+          High-performing ads dataset
+        </div>
+        <table className="min-w-full text-left text-sm">
+          <thead className="bg-slate-50 text-xs uppercase text-slate-500">
+            <tr>
+              <th className="px-4 py-3">Headline</th>
+              <th className="px-4 py-3">Owner</th>
+              <th className="px-4 py-3">Template</th>
+              <th className="px-4 py-3">Compliance</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-[var(--line)]">
+            {highPerformingAds.map((ad) => (
+              <tr key={ad.id}>
+                <td className="px-4 py-3 font-medium">{ad.headline}</td>
+                <td className="px-4 py-3 text-xs text-slate-600">{ad.user.email}</td>
+                <td className="px-4 py-3 text-xs">{ad.templateId || "—"}</td>
+                <td className="px-4 py-3">
+                  <span className="badge bg-emerald-100 text-emerald-800">{ad.complianceScore}</span>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
 
       <div className="card mt-6 overflow-x-auto">
@@ -104,10 +243,7 @@ export default async function AdminPage() {
                   {u.business ? (
                     <>
                       <div>{u.business.businessName}</div>
-                      <div className="text-xs text-slate-500">
-                        {u.business.industry} ·{" "}
-                        {u.business.onboardingComplete ? "onboarded" : "incomplete"}
-                      </div>
+                      <div className="text-xs text-slate-500">{u.business.industry}</div>
                     </>
                   ) : (
                     <span className="text-slate-400">—</span>
@@ -133,25 +269,6 @@ export default async function AdminPage() {
             ))}
           </tbody>
         </table>
-      </div>
-
-      <div className="card mt-6">
-        <div className="border-b border-[var(--line)] px-5 py-4 font-semibold text-teal-950">
-          Marketing enquiries
-        </div>
-        <div className="divide-y divide-[var(--line)]">
-          {enquiries.length === 0 && (
-            <div className="px-5 py-6 text-sm text-slate-500">No enquiries yet.</div>
-          )}
-          {enquiries.map((e) => (
-            <div key={e.id} className="px-5 py-3 text-sm">
-              <div className="font-medium">
-                {e.name} · {e.email}
-              </div>
-              <div className="text-slate-600">{e.message}</div>
-            </div>
-          ))}
-        </div>
       </div>
     </DashboardShell>
   );

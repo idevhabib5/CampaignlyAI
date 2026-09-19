@@ -12,29 +12,61 @@ export async function GET() {
   try {
     await requireAdmin();
 
-    const [users, campaigns, leads, creatives, subscriptions, enquiries] = await Promise.all([
+    const [
+      users,
+      campaigns,
+      leads,
+      creatives,
+      subscriptions,
+      enquiries,
+      mediaCount,
+      conversations,
+      messages,
+      diagnostics,
+      referrals,
+      highPerformingAds,
+      recentUsers,
+    ] = await Promise.all([
       prisma.user.count(),
       prisma.campaign.count(),
       prisma.lead.count(),
       prisma.adCreative.count(),
       prisma.subscription.groupBy({ by: ["plan", "status"], _count: true }),
       prisma.contactEnquiry.findMany({ orderBy: { createdAt: "desc" }, take: 10 }),
+      prisma.mediaAsset.count(),
+      prisma.whatsAppConversation.count(),
+      prisma.whatsAppMessage.count(),
+      prisma.diagnosticResult.count(),
+      prisma.referralCampaign.findMany({ orderBy: { createdAt: "desc" } }),
+      prisma.adCreative.findMany({
+        where: { complianceScore: { gte: 85 } },
+        orderBy: { complianceScore: "desc" },
+        take: 10,
+        select: {
+          id: true,
+          headline: true,
+          complianceScore: true,
+          templateId: true,
+          status: true,
+          createdAt: true,
+          user: { select: { email: true, name: true } },
+        },
+      }),
+      prisma.user.findMany({
+        orderBy: { createdAt: "desc" },
+        take: 20,
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          role: true,
+          createdAt: true,
+          subscription: true,
+          business: { select: { businessName: true, industry: true, onboardingComplete: true } },
+          _count: { select: { campaigns: true, leads: true, creatives: true } },
+        },
+      }),
     ]);
-
-    const recentUsers = await prisma.user.findMany({
-      orderBy: { createdAt: "desc" },
-      take: 20,
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        role: true,
-        createdAt: true,
-        subscription: true,
-        business: { select: { businessName: true, industry: true, onboardingComplete: true } },
-        _count: { select: { campaigns: true, leads: true, creatives: true } },
-      },
-    });
 
     const metaHealth = await checkMetaApiHealth();
     const jobs = await processScheduledFollowUps();
@@ -45,12 +77,31 @@ export async function GET() {
         campaigns,
         leads,
         creatives,
+        mediaCount,
+        conversations,
+        messages,
+        diagnostics,
         subscriptions,
+        aiUsage: {
+          creativesGenerated: creatives,
+          whatsappMessages: messages,
+          mediaAssets: mediaCount,
+          diagnosticsRun: diagnostics,
+        },
       },
       recentUsers,
       enquiries,
       metaHealth,
-      jobs,
+      jobs: {
+        ...jobs,
+        queue: [
+          { id: "followup-wa", name: "WhatsApp follow-ups", status: "idle", processed: jobs.processed },
+          { id: "meta-sync", name: "Meta metrics sync", status: "idle", processed: 0 },
+          { id: "lead-ingest", name: "Lead form ingest", status: "idle", processed: 0 },
+        ],
+      },
+      referrals,
+      highPerformingAds,
     });
   } catch (error) {
     return handleApiError(error);
@@ -80,7 +131,6 @@ export async function PATCH(req: Request) {
   }
 }
 
-// Dashboard summary for owners
 export async function POST(req: Request) {
   try {
     const session = await requireSession();

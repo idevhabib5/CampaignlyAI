@@ -11,6 +11,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState("demo1234");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [googleBusy, setGoogleBusy] = useState(false);
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
@@ -30,6 +31,26 @@ export default function LoginPage() {
       setError(err instanceof Error ? err.message : "Login failed");
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function continueWithGoogle() {
+    setGoogleBusy(true);
+    setError("");
+    try {
+      const res = await fetch("/api/auth", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "google" }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Google sign-in failed");
+      router.push(data.redirectTo || "/onboarding");
+      router.refresh();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Google sign-in failed");
+    } finally {
+      setGoogleBusy(false);
     }
   }
 
@@ -69,9 +90,29 @@ export default function LoginPage() {
               required
             />
           </div>
+          <div className="flex justify-end">
+            <Link href="/forgot-password" className="text-xs font-medium text-teal-700 hover:underline">
+              Forgot password?
+            </Link>
+          </div>
           <button className="btn-primary w-full" disabled={loading}>
             {loading ? "Signing in..." : "Sign in"}
           </button>
+          <div className="relative py-1 text-center text-xs text-slate-400">
+            <span className="bg-white px-2 relative z-10">or</span>
+            <div className="absolute inset-x-0 top-1/2 border-t border-[var(--line)]" />
+          </div>
+          <button
+            type="button"
+            className="btn-secondary w-full"
+            disabled={googleBusy}
+            onClick={continueWithGoogle}
+          >
+            {googleBusy ? "Connecting..." : "Continue with Google"}
+          </button>
+          <p className="text-center text-[11px] text-slate-500">
+            Mock OAuth — creates/logs in <code>google.demo@campaignly.ai</code>
+          </p>
           <div className="rounded-lg bg-teal-50 p-3 text-xs text-teal-900">
             <div className="font-semibold">Demo accounts</div>
             <div>owner@fitstudio.demo / demo1234</div>

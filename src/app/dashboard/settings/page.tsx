@@ -2,7 +2,8 @@ import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { PageHeader, StatusBadge } from "@/components/ui";
-import { parseJson } from "@/lib/utils";
+import { isLiveOnboardingAiConfigured } from "@/lib/services/ai";
+import { BusinessProfileForm } from "./business-profile-form";
 
 export default async function SettingsPage() {
   const user = await getCurrentUser();
@@ -14,13 +15,13 @@ export default async function SettingsPage() {
     take: 15,
   });
 
-  const recs = parseJson<Record<string, unknown>>(user.business?.aiRecommendations, {});
+  const liveAi = isLiveOnboardingAiConfigured();
 
   return (
     <div>
       <PageHeader
         title="Settings"
-        description="Business profile, branding, and account details used for AI personalization."
+        description="Account plan and editable business profile used for AI personalization."
       />
 
       <div className="grid gap-6 lg:grid-cols-2">
@@ -44,55 +45,36 @@ export default async function SettingsPage() {
             <div>
               <dt className="text-slate-500">Plan</dt>
               <dd className="font-medium">
-                {user.subscription?.plan} ({user.subscription?.status})
+                <span className="badge mr-2 bg-teal-100 text-teal-800">
+                  {user.subscription?.plan || "TRIAL"}
+                </span>
+                {user.subscription?.status}
               </dd>
             </div>
           </dl>
         </div>
 
-        <div className="card p-5">
-          <h2 className="font-semibold text-teal-950">Business profile</h2>
-          {user.business ? (
-            <dl className="mt-4 space-y-3 text-sm">
-              <div>
-                <dt className="text-slate-500">Business</dt>
-                <dd className="font-medium">{user.business.businessName}</dd>
-              </div>
-              <div>
-                <dt className="text-slate-500">Industry</dt>
-                <dd className="font-medium">
-                  {user.business.industry}
-                  {user.business.category ? ` · ${user.business.category}` : ""}
-                </dd>
-              </div>
-              <div>
-                <dt className="text-slate-500">Brand</dt>
-                <dd className="font-medium">
-                  {user.business.brandTone} / {user.business.communicationStyle}
-                </dd>
-              </div>
-              <div>
-                <dt className="text-slate-500">Audience</dt>
-                <dd>{user.business.targetAudience || "—"}</dd>
-              </div>
-              <div>
-                <dt className="text-slate-500">Location</dt>
-                <dd>{user.business.location || "—"}</dd>
-              </div>
-              {"suggestedBudget" in recs && (
-                <div>
-                  <dt className="text-slate-500">AI suggested budget</dt>
-                  <dd>${String(recs.suggestedBudget)}/day</dd>
-                </div>
-              )}
-            </dl>
-          ) : (
-            <p className="mt-3 text-sm text-slate-500">No business profile yet.</p>
-          )}
-          <a href="/onboarding" className="btn-secondary mt-5 inline-flex">
-            Edit via onboarding wizard
-          </a>
-        </div>
+        <BusinessProfileForm
+          aiMode={liveAi ? "live" : "mock_or_unconfigured"}
+          initial={
+            user.business
+              ? {
+                  businessName: user.business.businessName,
+                  industry: user.business.industry,
+                  category: user.business.category,
+                  brandTone: user.business.brandTone,
+                  communicationStyle: user.business.communicationStyle,
+                  targetAudience: user.business.targetAudience,
+                  website: user.business.website,
+                  location: user.business.location,
+                  services: user.business.services,
+                  brandColors: user.business.brandColors,
+                  logoUrl: user.business.logoUrl,
+                  aiRecommendations: user.business.aiRecommendations,
+                }
+              : null
+          }
+        />
       </div>
 
       <div className="card mt-6">
@@ -100,12 +82,16 @@ export default async function SettingsPage() {
           Recent notifications
         </div>
         <div className="divide-y divide-[var(--line)]">
-          {notifications.map((n) => (
-            <div key={n.id} className="px-5 py-3">
-              <div className="text-sm font-medium">{n.title}</div>
-              <div className="text-xs text-slate-500">{n.message}</div>
-            </div>
-          ))}
+          {notifications.length === 0 ? (
+            <div className="px-5 py-4 text-sm text-slate-500">No notifications yet.</div>
+          ) : (
+            notifications.map((n) => (
+              <div key={n.id} className="px-5 py-3">
+                <div className="text-sm font-medium">{n.title}</div>
+                <div className="text-xs text-slate-500">{n.message}</div>
+              </div>
+            ))
+          )}
         </div>
       </div>
     </div>

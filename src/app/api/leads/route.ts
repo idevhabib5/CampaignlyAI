@@ -32,12 +32,70 @@ export async function GET(req: Request) {
       },
       include: {
         campaign: { select: { id: true, name: true } },
-        conversation: { select: { id: true, leadScore: true, readyForConversion: true } },
+        conversation: {
+          select: {
+            id: true,
+            leadScore: true,
+            readyForConversion: true,
+            messages: {
+              orderBy: { createdAt: "desc" },
+              take: 5,
+              select: {
+                id: true,
+                direction: true,
+                sender: true,
+                content: true,
+                createdAt: true,
+              },
+            },
+          },
+        },
       },
       orderBy: { createdAt: "desc" },
     });
 
-    return jsonOk({ leads });
+    const allForAnalytics = await prisma.lead.findMany({
+      where: { userId: session.id },
+      select: {
+        status: true,
+        campaignId: true,
+        campaign: { select: { id: true, name: true } },
+      },
+    });
+
+    const byCampaign = new Map<
+      string,
+      { campaignId: string; name: string; total: number; converted: number; ready: number }
+    >();
+    for (const lead of allForAnalytics) {
+      const key = lead.campaignId || "none";
+      const name = lead.campaign?.name || "Unassigned";
+      const row = byCampaign.get(key) || {
+        campaignId: key,
+        name,
+        total: 0,
+        converted: 0,
+        ready: 0,
+      };
+      row.total += 1;
+      if (lead.status === "CONVERTED") row.converted += 1;
+      if (lead.status === "CONVERSION_READY") row.ready += 1;
+      byCampaign.set(key, row);
+    }
+
+    const analytics = {
+      total: allForAnalytics.length,
+      byStatus: allForAnalytics.reduce<Record<string, number>>((acc, l) => {
+        acc[l.status] = (acc[l.status] || 0) + 1;
+        return acc;
+      }, {}),
+      campaigns: Array.from(byCampaign.values()).map((c) => ({
+        ...c,
+        conversionRate: c.total ? Math.round((c.converted / c.total) * 100) : 0,
+      })),
+    };
+
+    return jsonOk({ leads, analytics });
   } catch (error) {
     return handleApiError(error);
   }

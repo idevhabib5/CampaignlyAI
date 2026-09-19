@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, useState } from "react";
+import Link from "next/link";
 import { MarketingFooter, MarketingNav } from "@/components/marketing-shell";
 import { INDUSTRIES } from "@/lib/utils";
 
@@ -42,13 +43,16 @@ export default function DiagnosticPage() {
       <MarketingNav />
       <div className="mx-auto grid max-w-6xl gap-8 px-4 py-16 lg:grid-cols-2 sm:px-6">
         <div>
-          <h1 className="font-display text-4xl font-semibold text-teal-950">Campaign diagnostic</h1>
+          <h1 className="font-display text-4xl font-semibold text-teal-950">
+            Campaign diagnostic
+          </h1>
           <p className="mt-3 text-slate-600">
-            Free AI-powered assessment of your Meta advertising readiness. Results are stored for
-            follow-up in this POC.
+            Free AI-powered assessment of your Meta advertising readiness (Module 9).
           </p>
           <form onSubmit={onSubmit} className="card mt-8 space-y-4 p-6">
-            {error && <div className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div>}
+            {error && (
+              <div className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div>
+            )}
             <div>
               <label className="label">Business name</label>
               <input
@@ -123,6 +127,9 @@ export default function DiagnosticPage() {
                   <li key={r}>{r}</li>
                 ))}
               </ul>
+              <Link href="/register" className="btn-primary mt-6 inline-flex">
+                Start free trial
+              </Link>
             </div>
           )}
         </div>

@@ -4,8 +4,8 @@ export const runtime = "nodejs";
 import { z } from "zod";
 import { requireSession } from "@/lib/auth";
 import { prisma } from "@/lib/db";
-import { handleApiError, jsonOk } from "@/lib/api";
-import { getOnboardingRecommendations } from "@/lib/services/ai";
+import { handleApiError, jsonError, jsonOk } from "@/lib/api";
+import { getOnboardingRecommendations, isLiveOnboardingAiConfigured } from "@/lib/services/ai";
 
 const schema = z.object({
   step: z.number().int().min(1).max(5).optional(),
@@ -19,14 +19,25 @@ const schema = z.object({
   location: z.string().optional(),
   services: z.string().optional(),
   brandColors: z.string().optional(),
+  logoUrl: z.string().optional(),
   complete: z.boolean().optional(),
+  /** When true, call OpenAI and refresh stored recommendations */
+  refreshRecommendations: z.boolean().optional(),
 });
 
 export async function GET() {
   try {
     const session = await requireSession();
     const business = await prisma.businessProfile.findUnique({ where: { userId: session.id } });
-    return jsonOk({ business });
+    const liveAi = isLiveOnboardingAiConfigured();
+    return jsonOk({
+      business,
+      aiMode: liveAi ? "live" : "mock_or_unconfigured",
+      providers: {
+        gemini: Boolean(process.env.GEMINI_API_KEY?.trim() || process.env.GOOGLE_AI_API_KEY?.trim()),
+        groq: Boolean(process.env.GROQ_API_KEY?.trim()),
+      },
+    });
   } catch (error) {
     return handleApiError(error);
   }
@@ -39,28 +50,66 @@ export async function PUT(req: Request) {
 
     const existing = await prisma.businessProfile.findUnique({ where: { userId: session.id } });
 
+    const businessName = data.businessName ?? existing?.businessName ?? "My Business";
+    const industry = data.industry ?? existing?.industry ?? "Local Services";
+    const category = data.category ?? existing?.category ?? null;
+    const brandTone = data.brandTone ?? existing?.brandTone ?? "professional";
+    const communicationStyle =
+      data.communicationStyle ?? existing?.communicationStyle ?? "friendly";
+    const targetAudience = data.targetAudience ?? existing?.targetAudience ?? null;
+    const website = data.website ?? existing?.website ?? null;
+    const location = data.location ?? existing?.location ?? null;
+    const services = data.services ?? existing?.services ?? null;
+    const brandColors = data.brandColors ?? existing?.brandColors ?? null;
+    const logoUrl = data.logoUrl ?? existing?.logoUrl ?? null;
+
+    const shouldRefreshAi =
+      Boolean(data.refreshRecommendations) ||
+      Boolean(data.complete) ||
+      (!existing?.aiRecommendations && (data.step === 4 || data.complete));
+
     let aiRecommendations = existing?.aiRecommendations || null;
-    if (data.industry && data.businessName) {
-      const recs = await getOnboardingRecommendations(data.industry, data.businessName);
-      aiRecommendations = JSON.stringify(recs);
-    } else if (data.industry && existing?.businessName) {
-      const recs = await getOnboardingRecommendations(data.industry, existing.businessName);
-      aiRecommendations = JSON.stringify(recs);
+    if (shouldRefreshAi) {
+      try {
+        const recs = await getOnboardingRecommendations({
+          businessName,
+          industry,
+          category,
+          brandTone,
+          communicationStyle,
+          targetAudience,
+          location,
+          services,
+          website,
+        });
+        aiRecommendations = JSON.stringify(recs);
+      } catch (err) {
+        if (data.refreshRecommendations || data.complete) {
+          const message = err instanceof Error ? err.message : "AI recommendations failed";
+          return jsonError(message, 502);
+        }
+      }
     }
 
     const payload = {
-      businessName: data.businessName ?? existing?.businessName ?? "My Business",
-      industry: data.industry ?? existing?.industry ?? "Local Services",
-      category: data.category ?? existing?.category,
-      brandTone: data.brandTone ?? existing?.brandTone ?? "professional",
-      communicationStyle: data.communicationStyle ?? existing?.communicationStyle ?? "friendly",
-      targetAudience: data.targetAudience ?? existing?.targetAudience,
-      website: data.website ?? existing?.website,
-      location: data.location ?? existing?.location,
-      services: data.services ?? existing?.services,
-      brandColors: data.brandColors ?? existing?.brandColors,
+      businessName,
+      industry,
+      category,
+      brandTone,
+      communicationStyle,
+      targetAudience,
+      website,
+      location,
+      services,
+      brandColors,
+      logoUrl,
       onboardingStep: data.step ?? existing?.onboardingStep ?? 1,
-      onboardingComplete: data.complete ?? existing?.onboardingComplete ?? false,
+      onboardingComplete:
+        data.complete === true
+          ? true
+          : data.complete === false
+            ? false
+            : (existing?.onboardingComplete ?? false),
       aiRecommendations,
     };
 

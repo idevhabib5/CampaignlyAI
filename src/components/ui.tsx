@@ -21,12 +21,12 @@ import { cn } from "@/lib/utils";
 
 const ownerLinks = [
   { href: "/dashboard", label: "Overview", icon: LayoutDashboard },
-  { href: "/dashboard/ads", label: "Ad Generator", icon: Sparkles },
+  { href: "/dashboard/ads", label: "Ads", icon: Sparkles },
   { href: "/dashboard/campaigns", label: "Campaigns", icon: Megaphone },
-  { href: "/dashboard/leads", label: "Leads", icon: Users },
-  { href: "/dashboard/whatsapp", label: "WhatsApp AI", icon: MessageCircle },
   { href: "/dashboard/media", label: "Media", icon: ImageIcon },
-  { href: "/dashboard/meta", label: "Meta Connect", icon: Link2 },
+  { href: "/dashboard/leads", label: "Leads", icon: Users },
+  { href: "/dashboard/whatsapp", label: "WhatsApp", icon: MessageCircle },
+  { href: "/dashboard/meta", label: "Meta", icon: Link2 },
   { href: "/dashboard/billing", label: "Billing", icon: CreditCard },
   { href: "/dashboard/settings", label: "Settings", icon: Settings },
 ];
@@ -129,9 +129,8 @@ export function DashboardShell({
             </div>
           </header>
 
-          {/* Mobile nav */}
           <div className="flex gap-2 overflow-x-auto border-b border-[var(--line)] bg-white px-3 py-2 md:hidden">
-            {ownerLinks.slice(0, 6).map((l) => (
+            {ownerLinks.map((l) => (
               <Link
                 key={l.href}
                 href={l.href}

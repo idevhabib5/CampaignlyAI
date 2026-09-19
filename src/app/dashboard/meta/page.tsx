@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { PageHeader } from "@/components/ui";
 
 export default function MetaConnectPage() {
@@ -33,8 +34,15 @@ export default function MetaConnectPage() {
       <PageHeader
         title="Meta account connection"
         description="Secure OAuth connection to Facebook Pages and Ad Accounts (mocked Graph API)."
+        actions={
+          <Link href="/dashboard/campaigns" className="btn-secondary">
+            Go to campaigns
+          </Link>
+        }
       />
-      {message && <div className="mb-4 rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-800">{message}</div>}
+      {message && (
+        <div className="mb-4 rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-800">{message}</div>
+      )}
 
       <div className="card p-5">
         <div className="flex flex-wrap items-center justify-between gap-3">
@@ -44,7 +52,9 @@ export default function MetaConnectPage() {
               {connection?.connected ? "Connected (mock)" : "Not connected"}
             </div>
             {connection?.accessTokenPreview && (
-              <div className="mt-1 text-xs text-slate-500">Token: {connection.accessTokenPreview}</div>
+              <div className="mt-1 text-xs text-slate-500">
+                Token: {connection.accessTokenPreview}
+              </div>
             )}
           </div>
           <button className="btn-primary" disabled={busy} onClick={connect}>

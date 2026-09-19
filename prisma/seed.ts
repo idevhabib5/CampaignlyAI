@@ -17,6 +17,8 @@ async function main() {
   await prisma.businessProfile.deleteMany();
   await prisma.contactEnquiry.deleteMany();
   await prisma.diagnosticResult.deleteMany();
+  await prisma.passwordResetToken.deleteMany();
+  await prisma.referralCampaign.deleteMany();
   await prisma.user.deleteMany();
 
   const passwordHash = await bcrypt.hash("demo1234", 10);
@@ -216,7 +218,29 @@ async function main() {
       status: "AI_ACTIVE",
       leadScore: 82,
       sentiment: "positive",
+      intent: "purchase_ready",
+      intentConfidence: 90,
+      escalateToOwner: true,
+      followUpDelayHours: 0,
       readyForConversion: true,
+      scoringBreakdown: JSON.stringify({
+        intentLabel: "Purchase / book intent",
+        sentimentScore: 36,
+        behavioralSignals: [
+          { id: "buy_signal", label: "Explicit booking/purchase language", weight: 20 },
+          { id: "pos_tone", label: "Positive sentiment markers", weight: 8 },
+          { id: "urgency", label: "Urgency language", weight: 7 },
+        ],
+        scoringBreakdown: {
+          intentContribution: 28,
+          sentimentContribution: 4,
+          signalContribution: 12,
+          previousScore: 60,
+        },
+        leadScoreDelta: 22,
+        followUpDelayHours: 0,
+        escalateToOwner: true,
+      }),
       messages: {
         create: [
           {
@@ -245,7 +269,7 @@ async function main() {
             direction: "outbound",
             sender: "AI",
             content:
-              "Great — you're a strong fit! I've notified the team. Someone will reach out shortly to help you get started. Any preferred time today?",
+              "Perfect — you look conversion-ready. I’ve notified the team to take over. What time works best for a quick call today?",
           },
         ],
       },
@@ -259,7 +283,27 @@ async function main() {
       status: "AI_ACTIVE",
       leadScore: 48,
       sentiment: "neutral",
+      intent: "information",
+      intentConfidence: 75,
+      escalateToOwner: false,
+      followUpDelayHours: 24,
       readyForConversion: false,
+      scoringBreakdown: JSON.stringify({
+        intentLabel: "Information seeking",
+        sentimentScore: 0,
+        behavioralSignals: [
+          { id: "asked_question", label: "Asked a question (active engagement)", weight: 5 },
+        ],
+        scoringBreakdown: {
+          intentContribution: 8,
+          sentimentContribution: 0,
+          signalContribution: 2,
+          previousScore: 40,
+        },
+        leadScoreDelta: 8,
+        followUpDelayHours: 24,
+        escalateToOwner: false,
+      }),
       messages: {
         create: [
           {
@@ -277,7 +321,7 @@ async function main() {
             direction: "outbound",
             sender: "AI",
             content:
-              "Thanks for your message! Quick question so I can help: are you looking to get started this month, or still exploring options?",
+              "Glad you asked. Quick question so I can personalize this: are you looking to start this month, or still comparing options?",
           },
         ],
       },
@@ -373,11 +417,87 @@ async function main() {
     },
   });
 
+  await prisma.diagnosticResult.create({
+    data: {
+      businessName: "Pulse Fit Studio",
+      industry: "Fitness",
+      email: "owner@fitstudio.demo",
+      monthlySpend: 450,
+      score: 72,
+      recommendations: JSON.stringify([
+        "Tighten creative claims for Meta policy",
+        "Add WhatsApp follow-up within 4 hours for hot leads",
+        "Test a local-services template alongside fitness lead gen",
+      ]),
+    },
+  });
+
+  await prisma.referralCampaign.createMany({
+    data: [
+      {
+        name: "Partner agencies Q1",
+        code: "AGENCY25",
+        channel: "partners",
+        clicks: 420,
+        signups: 38,
+        active: true,
+      },
+      {
+        name: "Fitness Facebook group",
+        code: "FITLAUNCH",
+        channel: "social",
+        clicks: 890,
+        signups: 61,
+        active: true,
+      },
+      {
+        name: "Inactive email drip",
+        code: "WINBACK",
+        channel: "email",
+        clicks: 120,
+        signups: 4,
+        active: false,
+      },
+    ],
+  });
+
+  await prisma.adCreative.create({
+    data: {
+      userId: owner.id,
+      headline: "Book your free trial this week",
+      primaryText:
+        "Limited free trial week at Pulse Fit Studio. Friendly coaches. Clear plan. Tap Book Now.",
+      description: "Pulse Fit · Trial",
+      cta: "Book Now",
+      variations: JSON.stringify([]),
+      audienceConfig: JSON.stringify({ ageMin: 22, ageMax: 45, gender: "all" }),
+      complianceScore: 88,
+      complianceNotes: "Bradley Filter (mock): Softened absolute claims.",
+      status: "ready",
+      templateId: "fitness-lead-gen",
+    },
+  });
+
+  await prisma.mediaAsset.create({
+    data: {
+      userId: owner.id,
+      filename: "feed-square-branded.jpg",
+      mimeType: "image/jpeg",
+      mediaType: "image",
+      url: "https://placehold.co/1080x1080/f97316/ffffff?text=Branded+Feed",
+      width: 1080,
+      height: 1080,
+      brandApplied: true,
+      captions: "Brand kit applied · primary teal + orange accent",
+    },
+  });
+
   console.log("Seed complete.");
   console.log("Demo accounts:");
   console.log("  owner@fitstudio.demo / demo1234  (business owner)");
   console.log("  admin@campaignly.ai / demo1234   (admin)");
   console.log("  newbie@demo.com / demo1234       (incomplete onboarding)");
+  console.log("  Continue with Google → google.demo@campaignly.ai (created on first click)");
   console.log(`  Conversation id sample: ${conv.id}`);
 }
 

@@ -5,6 +5,7 @@ const links = [
   { href: "/#features", label: "Product" },
   { href: "/pricing", label: "Pricing" },
   { href: "/diagnostic", label: "Diagnostic" },
+  { href: "/blog", label: "Blog" },
   { href: "/about", label: "About" },
   { href: "/contact", label: "Contact" },
 ];
@@ -44,7 +45,7 @@ export function MarketingNav() {
         <Link href="/" aria-label="Campaignly.AI home">
           <BrandMark />
         </Link>
-        <nav className="hidden items-center gap-6 md:flex">
+        <nav className="hidden items-center gap-6 lg:flex">
           {links.map((l) => (
             <Link
               key={l.href}
@@ -80,8 +81,8 @@ export function MarketingFooter() {
             </span>
           </Link>
           <p className="mt-3 max-w-md text-sm text-teal-100/80">
-            AI-powered Meta advertising automation for fitness, ecommerce, real estate, beauty,
-            healthcare, education, and local services.
+            Full-scope demo product for AI Meta advertising, lead management, and WhatsApp
+            nurturing — integrations mocked for credential-free demos.
           </p>
         </div>
         <div>
@@ -89,6 +90,7 @@ export function MarketingFooter() {
           <div className="mt-3 flex flex-col gap-2 text-sm text-teal-100/80">
             <Link href="/pricing">Pricing</Link>
             <Link href="/diagnostic">Campaign diagnostic</Link>
+            <Link href="/blog">Blog</Link>
             <Link href="/login">Dashboard login</Link>
           </div>
         </div>
@@ -103,7 +105,7 @@ export function MarketingFooter() {
         </div>
       </div>
       <div className="border-t border-teal-900 px-4 py-4 text-center text-xs text-teal-200/70">
-        © {new Date().getFullYear()} Campaignly.AI — Functional POC
+        © {new Date().getFullYear()} Campaignly.AI — Complete Demo Product
       </div>
     </footer>
   );

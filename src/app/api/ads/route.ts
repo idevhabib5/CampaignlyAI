@@ -5,7 +5,7 @@ import { z } from "zod";
 import { requireSession } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { handleApiError, jsonError, jsonOk } from "@/lib/api";
-import { generateAdContent } from "@/lib/services/ai";
+import { generateAdContent, isLiveAdsAiConfigured } from "@/lib/services/ai";
 
 export async function GET() {
   try {
@@ -14,7 +14,16 @@ export async function GET() {
       where: { userId: session.id },
       orderBy: { createdAt: "desc" },
     });
-    return jsonOk({ creatives });
+    return jsonOk({
+      creatives,
+      aiMode: isLiveAdsAiConfigured() ? "live" : "mock_or_unconfigured",
+      providers: {
+        gemini: Boolean(
+          process.env.GEMINI_API_KEY?.trim() || process.env.GOOGLE_AI_API_KEY?.trim()
+        ),
+        groq: Boolean(process.env.GROQ_API_KEY?.trim()),
+      },
+    });
   } catch (error) {
     return handleApiError(error);
   }
@@ -38,6 +47,53 @@ export async function POST(req: Request) {
     }
     if (!business) return jsonError("Business profile required", 400);
 
+    const templateId =
+      body.templateId || `${business.industry.toLowerCase().replace(/\s+/g, "-")}-lead-gen`;
+
+    // RAG-style retrieval: high-compliance ads from SQLite (prefer matching template)
+    const sameTemplate = await prisma.adCreative.findMany({
+      where: {
+        complianceScore: { gte: 85 },
+        templateId,
+      },
+      orderBy: { complianceScore: "desc" },
+      take: 5,
+      select: {
+        id: true,
+        headline: true,
+        primaryText: true,
+        complianceScore: true,
+        templateId: true,
+      },
+    });
+
+    let ragPool = sameTemplate;
+    if (ragPool.length < 5) {
+      const extras = await prisma.adCreative.findMany({
+        where: {
+          complianceScore: { gte: 85 },
+          id: { notIn: sameTemplate.map((a) => a.id) },
+        },
+        orderBy: { complianceScore: "desc" },
+        take: 5 - ragPool.length,
+        select: {
+          id: true,
+          headline: true,
+          primaryText: true,
+          complianceScore: true,
+          templateId: true,
+        },
+      });
+      ragPool = [...ragPool, ...extras];
+    }
+
+    const ragExamples = ragPool.map(({ headline, primaryText, complianceScore, templateId: tid }) => ({
+      headline,
+      primaryText,
+      complianceScore,
+      templateId: tid,
+    }));
+
     const generated = await generateAdContent({
       businessName: business.businessName,
       industry: business.industry,
@@ -50,6 +106,8 @@ export async function POST(req: Request) {
       ageMin: body.ageMin,
       ageMax: body.ageMax,
       gender: body.gender,
+      templateId,
+      ragExamples,
     });
 
     const creative = await prisma.adCreative.create({
@@ -69,7 +127,7 @@ export async function POST(req: Request) {
         complianceScore: generated.complianceScore,
         complianceNotes: generated.complianceNotes,
         status: "ready",
-        templateId: body.templateId || `${business.industry.toLowerCase()}-lead-gen`,
+        templateId,
       },
     });
 
@@ -77,7 +135,35 @@ export async function POST(req: Request) {
       creative,
       ragInsights: generated.ragInsights,
       recommendations: generated.recommendations,
+      policyChecks: generated.policyChecks || [],
+      ragExampleCount: ragExamples.length,
+      source: generated.source,
+      model: generated.model || null,
     });
+  } catch (error) {
+    return handleApiError(error);
+  }
+}
+
+const deleteSchema = z.object({
+  id: z.string().min(1),
+});
+
+export async function DELETE(req: Request) {
+  try {
+    const session = await requireSession();
+    const { searchParams } = new URL(req.url);
+    const idFromQuery = searchParams.get("id");
+    const body = idFromQuery ? { id: idFromQuery } : deleteSchema.parse(await req.json());
+    const id = body.id;
+
+    const existing = await prisma.adCreative.findFirst({
+      where: { id, userId: session.id },
+    });
+    if (!existing) return jsonError("Ad not found", 404);
+
+    await prisma.adCreative.delete({ where: { id } });
+    return jsonOk({ deleted: true, id });
   } catch (error) {
     return handleApiError(error);
   }

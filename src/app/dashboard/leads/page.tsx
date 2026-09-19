@@ -1,8 +1,16 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { EmptyState, PageHeader, StatusBadge } from "@/components/ui";
+
+type ActivityMsg = {
+  id: string;
+  direction: string;
+  sender: string;
+  content: string;
+  createdAt: string;
+};
 
 type Lead = {
   id: string;
@@ -14,12 +22,32 @@ type Lead = {
   category: string | null;
   engagementLevel: string;
   notes: string | null;
+  lastActivityAt?: string;
   campaign: { id: string; name: string } | null;
-  conversation: { id: string; leadScore: number; readyForConversion: boolean } | null;
+  conversation: {
+    id: string;
+    leadScore: number;
+    readyForConversion: boolean;
+    messages?: ActivityMsg[];
+  } | null;
+};
+
+type Analytics = {
+  total: number;
+  byStatus: Record<string, number>;
+  campaigns: Array<{
+    campaignId: string;
+    name: string;
+    total: number;
+    converted: number;
+    ready: number;
+    conversionRate: number;
+  }>;
 };
 
 export default function LeadsPage() {
   const [leads, setLeads] = useState<Lead[]>([]);
+  const [analytics, setAnalytics] = useState<Analytics | null>(null);
   const [q, setQ] = useState("");
   const [status, setStatus] = useState("");
   const [loading, setLoading] = useState(true);
@@ -35,6 +63,7 @@ export default function LeadsPage() {
     const res = await fetch(`/api/leads?${sp.toString()}`);
     const data = await res.json();
     setLeads(data.leads || []);
+    setAnalytics(data.analytics || null);
     setLoading(false);
   }
 
@@ -72,19 +101,77 @@ export default function LeadsPage() {
     }
   }
 
+  const activity = useMemo(() => {
+    if (!selected?.conversation?.messages) return [];
+    return [...selected.conversation.messages].sort(
+      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    );
+  }, [selected]);
+
   return (
     <div>
       <PageHeader
         title="Leads"
-        description="Sync Meta lead forms, search/filter prospects, and track engagement."
+        description="Sync Meta lead forms, track conversion by campaign, and review activity timelines."
         actions={
           <button className="btn-primary" disabled={busy} onClick={syncLeads}>
             {busy ? "Syncing..." : "Refresh from Meta"}
           </button>
         }
       />
+      {message && (
+        <div className="mb-4 rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-800">
+          {message}
+        </div>
+      )}
 
-      {message && <div className="mb-4 rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-800">{message}</div>}
+      {analytics && (
+        <div className="mb-6 grid gap-4 lg:grid-cols-3">
+          <div className="card p-4">
+            <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+              Pipeline
+            </div>
+            <div className="mt-2 text-2xl font-semibold text-teal-950">{analytics.total}</div>
+            <div className="mt-2 flex flex-wrap gap-2 text-xs text-slate-600">
+              {Object.entries(analytics.byStatus)
+                .slice(0, 5)
+                .map(([s, n]) => (
+                  <span key={s} className="rounded-full bg-slate-100 px-2 py-0.5">
+                    {s.replaceAll("_", " ")}: {n}
+                  </span>
+                ))}
+            </div>
+          </div>
+          <div className="card overflow-hidden p-0 lg:col-span-2">
+            <div className="border-b border-[var(--line)] px-4 py-3 text-sm font-semibold text-teal-950">
+              Campaign conversion
+            </div>
+            <div className="divide-y divide-[var(--line)]">
+              {analytics.campaigns.length === 0 ? (
+                <div className="px-4 py-6 text-sm text-slate-500">No campaign attribution yet.</div>
+              ) : (
+                analytics.campaigns.map((c) => (
+                  <div
+                    key={c.campaignId}
+                    className="flex items-center justify-between gap-3 px-4 py-3 text-sm"
+                  >
+                    <div>
+                      <div className="font-medium text-slate-900">{c.name}</div>
+                      <div className="text-xs text-slate-500">
+                        {c.total} leads · {c.ready} ready · {c.converted} converted
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div className="font-semibold text-teal-800">{c.conversionRate}%</div>
+                      <div className="text-xs text-slate-500">conversion</div>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="mb-4 flex flex-col gap-3 sm:flex-row">
         <input
@@ -103,13 +190,19 @@ export default function LeadsPage() {
           }}
         >
           <option value="">All statuses</option>
-          {["NEW", "CONTACTED", "NURTURING", "QUALIFIED", "CONVERSION_READY", "CONVERTED", "LOST"].map(
-            (s) => (
-              <option key={s} value={s}>
-                {s.replaceAll("_", " ")}
-              </option>
-            )
-          )}
+          {[
+            "NEW",
+            "CONTACTED",
+            "NURTURING",
+            "QUALIFIED",
+            "CONVERSION_READY",
+            "CONVERTED",
+            "LOST",
+          ].map((s) => (
+            <option key={s} value={s}>
+              {s.replaceAll("_", " ")}
+            </option>
+          ))}
         </select>
         <button className="btn-secondary" onClick={() => load()}>
           Search
@@ -152,7 +245,7 @@ export default function LeadsPage() {
         <div className="card p-5">
           <h2 className="font-semibold text-teal-950">Lead details</h2>
           {!selected ? (
-            <p className="mt-3 text-sm text-slate-500">Select a lead to view details.</p>
+            <p className="mt-3 text-sm text-slate-500">Select a lead to view details and activity.</p>
           ) : (
             <div className="mt-4 space-y-3 text-sm">
               <div>
@@ -177,13 +270,19 @@ export default function LeadsPage() {
                   value={selected.status}
                   onChange={(e) => updateLead(selected.id, { status: e.target.value })}
                 >
-                  {["NEW", "CONTACTED", "NURTURING", "QUALIFIED", "CONVERSION_READY", "CONVERTED", "LOST"].map(
-                    (s) => (
-                      <option key={s} value={s}>
-                        {s}
-                      </option>
-                    )
-                  )}
+                  {[
+                    "NEW",
+                    "CONTACTED",
+                    "NURTURING",
+                    "QUALIFIED",
+                    "CONVERSION_READY",
+                    "CONVERTED",
+                    "LOST",
+                  ].map((s) => (
+                    <option key={s} value={s}>
+                      {s}
+                    </option>
+                  ))}
                 </select>
               </div>
               <div>
@@ -193,6 +292,28 @@ export default function LeadsPage() {
                   defaultValue={selected.notes || ""}
                   onBlur={(e) => updateLead(selected.id, { notes: e.target.value })}
                 />
+              </div>
+              <div>
+                <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                  Activity timeline
+                </div>
+                {activity.length === 0 ? (
+                  <p className="mt-2 text-xs text-slate-500">No WhatsApp activity yet.</p>
+                ) : (
+                  <ul className="mt-2 max-h-48 space-y-2 overflow-y-auto">
+                    {activity.map((m) => (
+                      <li key={m.id} className="rounded-lg bg-slate-50 px-3 py-2 text-xs">
+                        <div className="flex justify-between gap-2 text-slate-500">
+                          <span>
+                            {m.sender} · {m.direction}
+                          </span>
+                          <span>{new Date(m.createdAt).toLocaleString()}</span>
+                        </div>
+                        <div className="mt-1 text-slate-800">{m.content}</div>
+                      </li>
+                    ))}
+                  </ul>
+                )}
               </div>
               {selected.conversation && (
                 <Link href="/dashboard/whatsapp" className="btn-primary w-full">
