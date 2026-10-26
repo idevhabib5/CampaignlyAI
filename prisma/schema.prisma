@@ -30,6 +30,7 @@ model User {
   conversations  WhatsAppConversation[]
   subscription   Subscription?
   notifications  Notification[]
+  metaConnection MetaConnection?
 }
 
 model BusinessProfile {
@@ -76,46 +77,88 @@ model AdCreative {
 }
 
 model MediaAsset {
-  id           String   @id @default(cuid())
-  userId       String
-  filename     String
-  mimeType     String
-  mediaType    String
-  url          String
-  width        Int?
-  height       Int?
-  durationSec  Int?
-  brandApplied Boolean  @default(false)
-  captions     String?
-  notes        String?
-  createdAt    DateTime @default(now())
+  id               String   @id @default(cuid())
+  userId           String
+  parentId         String?
+  filename         String
+  mimeType         String
+  mediaType        String
+  url              String
+  storageKey       String?
+  width            Int?
+  height           Int?
+  durationSec      Int?
+  brandApplied     Boolean  @default(false)
+  captions         String?
+  captionTrackUrl  String?
+  placement        String?
+  source           String   @default("upload") // upload | resize | brand | caption | snippet | enhance | manual_edit
+  processingStatus String   @default("ready") // ready | processing | failed
+  notes            String?
+  createdAt        DateTime @default(now())
+
+  user      User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  parent    MediaAsset?  @relation("MediaVariants", fields: [parentId], references: [id], onDelete: SetNull)
+  variants  MediaAsset[] @relation("MediaVariants")
+  campaigns Campaign[]
+}
+
+model MetaConnection {
+  id             String    @id @default(cuid())
+  userId         String    @unique
+  status         String    @default("DISCONNECTED") // CONNECTED | RECONNECT_REQUIRED | DISCONNECTED
+  adAccountId    String?
+  pageId         String?
+  tokenPreview   String?
+  adAccountsJson String?
+  pagesJson      String?
+  connectedAt    DateTime?
+  disconnectedAt DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Campaign {
-  id              String   @id @default(cuid())
-  userId          String
-  adCreativeId    String?
-  name            String
-  objective       String   @default("LEAD_GENERATION")
-  status          String   @default("DRAFT") // DRAFT | PENDING_REVIEW | ACTIVE | PAUSED | COMPLETED | STOPPED
-  dailyBudget     Float    @default(20)
-  totalBudget     Float?
-  targeting       String?
-  metaCampaignId  String?
-  metaAdAccountId String?
-  facebookPageId  String?
-  impressions     Int      @default(0)
-  clicks          Int      @default(0)
-  conversions     Int      @default(0)
-  spend           Float    @default(0)
-  lastSyncedAt    DateTime?
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  id                  String    @id @default(cuid())
+  userId              String
+  adCreativeId        String?
+  mediaAssetId        String?
+  name                String
+  objective           String    @default("LEADS") // AWARENESS | TRAFFIC | ENGAGEMENT | LEADS | APP_PROMOTION | SALES
+  status              String    @default("DRAFT") // DRAFT | PENDING_REVIEW | ACTIVE | PAUSED | STOPPED | REJECTED
+  localStatus         String    @default("DRAFT") // DRAFT | READY | SUBMITTED | FAILED
+  metaStatus          String? // PENDING_REVIEW | ACTIVE | PAUSED | STOPPED | REJECTED
+  metaReviewReason    String?
+  budgetType          String    @default("DAILY") // DAILY | LIFETIME
+  dailyBudget         Float     @default(20)
+  totalBudget         Float?
+  scheduleStart       DateTime?
+  scheduleEnd         DateTime?
+  targeting           String?
+  specialAdCategory   String? // NONE | HOUSING | EMPLOYMENT | CREDIT (POLITICAL rejected)
+  resolvedLocation    String?
+  locationConfirmedAt DateTime?
+  placements          String? // JSON: feed_square | story_reels | landscape
+  metaCampaignId      String?
+  metaAdSetId         String?
+  metaAdId            String?
+  metaAdAccountId     String?
+  facebookPageId      String?
+  impressions         Int       @default(0)
+  clicks              Int       @default(0)
+  conversions         Int       @default(0)
+  spend               Float     @default(0)
+  metricsAvailable    Boolean   @default(false)
+  lastSyncedAt        DateTime?
+  lastSyncError       String?
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
 
   user       User        @relation(fields: [userId], references: [id], onDelete: Cascade)
   adCreative AdCreative? @relation(fields: [adCreativeId], references: [id])
+  mediaAsset MediaAsset? @relation(fields: [mediaAssetId], references: [id])
   leads      Lead[]
 }
 

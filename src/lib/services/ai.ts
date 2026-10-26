@@ -137,7 +137,7 @@ function pick<T>(arr: T[], i: number) {
   return arr[i % arr.length];
 }
 
-function useMockAi() {
+function isMockAiEnabled() {
   return process.env.USE_MOCK_AI !== "false";
 }
 
@@ -315,7 +315,7 @@ export async function getOnboardingRecommendations(
       ? { industry: input, businessName: businessNameArg || "Business" }
       : input;
 
-  const allowMock = useMockAi();
+  const allowMock = isMockAiEnabled();
   const hasGemini = Boolean(getGeminiKey());
   const hasGroq = Boolean(getGroqKey());
 
@@ -580,7 +580,7 @@ function mockGenerateAdContent(input: AdGenerationInput): GeneratedAd {
  * Primary: Gemini. Secondary: Groq. Mock only when USE_MOCK_AI is not false.
  */
 export async function generateAdContent(input: AdGenerationInput): Promise<GeneratedAd> {
-  if (useMockAi()) {
+  if (isMockAiEnabled()) {
     await delay(400);
     return mockGenerateAdContent(input);
   }

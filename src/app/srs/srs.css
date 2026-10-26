@@ -1,0 +1,19 @@
+.srs-scope {
+  --text: #0c1a1a;
+  --text-secondary: #475569;
+  --text-muted: #64748b;
+  --border: #d7e0de;
+  --border-strong: #b8c7c4;
+  --primary: #0f766e;
+  --primary-soft: #f0fdfa;
+  --bg: #f4f7f6;
+  --bg-elevated: #ffffff;
+  --bg-muted: #eef3f2;
+  --success-soft: #dcfce7;
+  --warning-soft: #fef3c7;
+  --danger-soft: #fee2e2;
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 16px;
+  --ai-gradient: linear-gradient(135deg, #0f766e 0%, #14b8a6 100%);
+}

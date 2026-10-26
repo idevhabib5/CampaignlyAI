@@ -5,7 +5,14 @@ const nextConfig: NextConfig = {
   outputFileTracingIncludes: {
     "/**": ["./prisma/dev.db", "./prisma/schema.prisma"],
   },
-  serverExternalPackages: ["@prisma/client", "prisma", "bcryptjs"],
+  serverExternalPackages: [
+    "@prisma/client",
+    "prisma",
+    "bcryptjs",
+    "sharp",
+    "fluent-ffmpeg",
+    "@aws-sdk/client-s3",
+  ],
 };
 
 export default nextConfig;

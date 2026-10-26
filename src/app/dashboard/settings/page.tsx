@@ -4,6 +4,7 @@ import { prisma } from "@/lib/db";
 import { PageHeader, StatusBadge } from "@/components/ui";
 import { isLiveOnboardingAiConfigured } from "@/lib/services/ai";
 import { BusinessProfileForm } from "./business-profile-form";
+import { MetaIntegrationsCard } from "./meta-integrations";
 
 export default async function SettingsPage() {
   const user = await getCurrentUser();
@@ -75,6 +76,8 @@ export default async function SettingsPage() {
               : null
           }
         />
+
+        <MetaIntegrationsCard />
       </div>
 
       <div className="card mt-6">

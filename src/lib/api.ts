@@ -17,6 +17,9 @@ export function handleApiError(error: unknown) {
   if (error instanceof ZodError) {
     return jsonError(error.issues[0]?.message || "Validation failed", 400);
   }
+  if (error instanceof Error && error.message && error.message !== "Internal server error") {
+    return jsonError(error.message, 400);
+  }
   console.error(error);
   return jsonError("Internal server error", 500);
 }

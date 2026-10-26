@@ -35,6 +35,10 @@ yarn-error.log*
 .env.local
 .env.*.local
 
+# local media uploads (Module 3)
+/public/uploads
+/uploads
+
 # local sqlite
 /prisma/dev.db
 /prisma/dev.db-journal

@@ -17,9 +17,9 @@ Stack: **Next.js App Router + Prisma SQLite** (Vercel-capable). Service interfac
 6. Sign in: `owner@fitstudio.demo` / `demo1234`.
 7. **Overview** — metrics + checklist.
 8. **Ads** — pick a template from the gallery → Generate → review **RAG insights** + **Bradley Filter** panel → Deploy to campaign.
-9. **Media** — upload mock asset, apply brand/captions/placements.
-10. **Meta** — mock OAuth connect, accounts/pages.
-11. **Campaigns** — create/deploy, sync metrics, pause.
+9. **Media** — real file upload → captions / Meta placements / brand / enhance / snippet / manual crop-trim (requires FFmpeg for video).
+10. **Meta** — mock OAuth connect, select Page/ad account, reconnect/disconnect.
+11. **Campaigns** — six objectives, attach media + creative, location confirm, placement preview, Bradley recheck, deploy/sync/pause.
 12. **Leads** — campaign conversion table + activity timeline; **Refresh from Meta**.
 13. **WhatsApp** — intent presets → scoring panel; click **Run follow-up jobs** (mock BullMQ tick).
 14. **Billing** — plan cards, mock checkout/portal; soft gates on trial.
@@ -46,8 +46,8 @@ Fresh path: **Register** → 3-step onboarding → same dashboard.
 |---|--------|---------|
 | 1 | Onboarding | `/onboarding`, Settings profile |
 | 2 | AI Ads | `/dashboard/ads` (templates + RAG/Bradley) |
-| 3 | Media | `/dashboard/media` |
-| 4 | Meta Campaigns | `/dashboard/meta` + `/dashboard/campaigns` |
+| 3 | Media | `/dashboard/media` (Sharp + FFmpeg + Whisper/local S3) |
+| 4 | Meta Campaigns | `/dashboard/meta` + `/dashboard/campaigns` + Settings integrations |
 | 5 | Leads | `/dashboard/leads` (analytics + activity) |
 | 6 | WhatsApp | `/dashboard/whatsapp` (scoring + follow-up jobs) |
 | 7 | Billing | `/dashboard/billing` |
@@ -67,6 +67,45 @@ npm run dev
 Open http://localhost:3000
 
 `npm run setup` typically runs Prisma generate, db push, and seed.
+
+## Module 3 — hybrid media pipeline
+
+| Capability | Implementation |
+|------------|----------------|
+| Upload (FE-1) | Multipart upload → local `public/uploads` or AWS S3 |
+| Video trim (FE-2 / FE-9) | `fluent-ffmpeg` (system FFmpeg required) |
+| Captions (FE-3) | OpenAI Whisper when `OPENAI_API_KEY` set; else Gemini/Groq tips or demo text + VTT |
+| Meta resize (FE-4) | Sharp (images) / FFmpeg (video) |
+| Brand kit (FE-5) | Business profile colors + logo overlay |
+| Snippets (FE-6) | FFmpeg short clip |
+| Library (FE-7) | Variants linked by `parentId`; delete removes storage |
+| Enhance (FE-8) | Sharp normalize + sharpen |
+| Manual edit (FE-9) | Crop ratios (images) / trim range (video) |
+
+**Prerequisites for video:** install [FFmpeg](https://ffmpeg.org/download.html) and ensure it is on your PATH. Image workflows work without FFmpeg.
+
+**Vercel note:** FFmpeg is not available on default Vercel serverless. Prefer local/`npm run dev` or an EC2-style host for full Module 3 video demos. Uploads and Sharp image actions can still work when file system / S3 is configured.
+
+Set `USE_MOCK_S3=false` and fill AWS vars in `.env` to use real S3.
+
+## Module 4 — hybrid Meta campaign automation
+
+| Capability | Implementation |
+|------------|----------------|
+| Connect / reconnect / disconnect (FR-026, FR-036) | Persisted `MetaConnection`; mock OAuth; Settings + `/dashboard/meta` |
+| Page & ad account select (FR-027) | Server rejects forged IDs not in the connected asset list |
+| Six objectives + budget/schedule (FR-028) | Awareness, Traffic, Engagement, Leads, App promotion, Sales; daily or lifetime |
+| Attach media + copy (FR-029) | Owned `MediaAsset` + `AdCreative`; cross-tenant attach rejected |
+| Location confirm (FR-030) | Mock geocode from business profile; deploy blocked until confirmed |
+| Special ad categories (FR-086) | Housing / Employment / Credit declarations; political rejected |
+| Bradley recheck (FR-015 / BR-002) | Internal filter before Meta write; never claimed as Meta approval |
+| Placement preview (FR-089) | Feed / Stories-Reels / Landscape preview in builder |
+| Control (FR-033) | Pause / activate / stop after mock provider acknowledgement |
+| Status + sync (FR-031, FR-034, FR-035) | Separate local vs Meta status; unavailable ≠ zero; failed sync keeps last snapshot |
+
+Keep `USE_MOCK_META=true` for demos. Live Graph OAuth remains deferred until Meta app review.
+
+Smoke: with `npm run dev` running, `npx tsx scripts/smoke-meta.ts`.
 
 ## Vercel
 
@@ -99,19 +138,19 @@ Next.js App Router
 | Service | File | Behavior |
 |---------|------|----------|
 | AI / RAG / Bradley | `src/lib/services/ai.ts` | Ad copy, variations, compliance |
-| Meta Graph | `src/lib/services/meta.ts` | OAuth, deploy, sync, health |
+| Meta Graph | `src/lib/services/meta.ts` | OAuth, deploy, control, sync, health (persisted MetaConnection) |
 | WhatsApp | `src/lib/services/whatsapp.ts` | Intent/sentiment scoring, follow-ups |
 | Stripe | `src/lib/services/stripe.ts` | Checkout, portal, webhooks stubs |
-| Media / S3 | `src/lib/services/media.ts` | Upload, brand, caption, resize stubs |
+| Media / S3 | `src/lib/services/media/*` | Sharp + FFmpeg + Whisper; local or S3 storage |
 | Jobs | WhatsApp + Admin | Mock BullMQ follow-up ticks |
 | Google OAuth | `/api/auth` `action: google` | Creates/logs in demo Google user |
 
 ## Explicitly deferred
 
-- Real OpenAI, Meta Graph OAuth, Stripe keys, WhatsApp Cloud API, AWS S3
-- Real Redis/BullMQ workers
+- Real Meta Graph OAuth, Stripe keys, WhatsApp Cloud API (still mocked)
+- Real Redis/BullMQ workers for media (processing is synchronous in API)
 - Express API + MongoDB split
-- True video editing engine (UI simulates trim/caption/resize)
+- Full NLE / multi-track video editor
 
 ## Scope note
 

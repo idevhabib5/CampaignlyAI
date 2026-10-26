@@ -13,6 +13,7 @@ async function main() {
   await prisma.campaign.deleteMany();
   await prisma.adCreative.deleteMany();
   await prisma.mediaAsset.deleteMany();
+  await prisma.metaConnection.deleteMany();
   await prisma.subscription.deleteMany();
   await prisma.businessProfile.deleteMany();
   await prisma.contactEnquiry.deleteMany();
@@ -104,14 +105,55 @@ async function main() {
     },
   });
 
+  const heroMedia = await prisma.mediaAsset.create({
+    data: {
+      userId: owner.id,
+      filename: "studio-hero.jpg",
+      mimeType: "image/jpeg",
+      mediaType: "image",
+      url: "https://placehold.co/1080x1080/134e4a/ecfdf5?text=Studio+Hero",
+      width: 1080,
+      height: 1080,
+      brandApplied: true,
+      placement: "feed_square",
+      source: "upload",
+      processingStatus: "ready",
+      notes: "Seed sample image for Meta deploy",
+    },
+  });
+
+  await prisma.metaConnection.create({
+    data: {
+      userId: owner.id,
+      status: "CONNECTED",
+      adAccountId: "act_100200300",
+      pageId: "page_778899",
+      tokenPreview: "EAAG...mock_token_expires_in_60d",
+      adAccountsJson: JSON.stringify([
+        { id: "act_100200300", name: "Primary Ad Account", currency: "USD" },
+        { id: "act_100200301", name: "Brand Awareness Account", currency: "USD" },
+      ]),
+      pagesJson: JSON.stringify([
+        { id: "page_778899", name: "Business Facebook Page" },
+        { id: "page_778900", name: "Instagram Business Profile" },
+      ]),
+      connectedAt: new Date(),
+    },
+  });
+
   const campaign = await prisma.campaign.create({
     data: {
       userId: owner.id,
       adCreativeId: creative.id,
+      mediaAssetId: heroMedia.id,
       name: "Austin Lead Gen — Spring Push",
-      objective: "LEAD_GENERATION",
+      objective: "LEADS",
       status: "ACTIVE",
+      localStatus: "SUBMITTED",
+      metaStatus: "ACTIVE",
+      budgetType: "DAILY",
       dailyBudget: 35,
+      scheduleStart: new Date(Date.now() - 7 * 86400000),
       targeting: JSON.stringify({
         countries: ["US"],
         cities: ["Austin"],
@@ -120,13 +162,20 @@ async function main() {
         ageMax: 40,
         interests: ["Fitness", "Gym", "Weight Training"],
       }),
+      specialAdCategory: "NONE",
+      resolvedLocation: "Austin, TX, USA",
+      locationConfirmedAt: new Date(Date.now() - 7 * 86400000),
+      placements: JSON.stringify(["feed_square", "story_reels"]),
       metaCampaignId: "meta_camp_demo001",
+      metaAdSetId: "meta_adset_demo001",
+      metaAdId: "meta_ad_demo001",
       metaAdAccountId: "act_100200300",
       facebookPageId: "page_778899",
       impressions: 18420,
       clicks: 642,
       conversions: 48,
       spend: 412.5,
+      metricsAvailable: true,
       lastSyncedAt: new Date(),
     },
   });
@@ -135,10 +184,15 @@ async function main() {
     data: {
       userId: owner.id,
       adCreativeId: creative.id,
+      mediaAssetId: heroMedia.id,
       name: "Instagram Stories — Trial Offer",
-      objective: "LEAD_GENERATION",
+      objective: "TRAFFIC",
       status: "PAUSED",
+      localStatus: "SUBMITTED",
+      metaStatus: "PAUSED",
+      budgetType: "DAILY",
       dailyBudget: 20,
+      scheduleStart: new Date(Date.now() - 3 * 86400000),
       targeting: JSON.stringify({
         countries: ["US"],
         cities: ["Austin"],
@@ -146,11 +200,18 @@ async function main() {
         ageMin: 22,
         ageMax: 35,
       }),
+      specialAdCategory: "NONE",
+      resolvedLocation: "Austin, TX, USA",
+      locationConfirmedAt: new Date(Date.now() - 3 * 86400000),
+      placements: JSON.stringify(["story_reels"]),
       metaCampaignId: "meta_camp_demo002",
+      metaAdAccountId: "act_100200300",
+      facebookPageId: "page_778899",
       impressions: 5200,
       clicks: 180,
       conversions: 12,
       spend: 98.2,
+      metricsAvailable: true,
       lastSyncedAt: new Date(Date.now() - 86400000),
     },
   });
@@ -328,31 +389,23 @@ async function main() {
     },
   });
 
-  await prisma.mediaAsset.createMany({
-    data: [
-      {
-        userId: owner.id,
-        filename: "studio-hero.jpg",
-        mimeType: "image/jpeg",
-        mediaType: "image",
-        url: "https://placehold.co/1080x1080/134e4a/ecfdf5?text=Studio+Hero",
-        width: 1080,
-        height: 1080,
-        brandApplied: true,
-      },
-      {
-        userId: owner.id,
-        filename: "trial-reel.mp4",
-        mimeType: "video/mp4",
-        mediaType: "video",
-        url: "https://placehold.co/1080x1920/0f766e/ffffff?text=Trial+Reel",
-        width: 1080,
-        height: 1920,
-        durationSec: 15,
-        captions: "Auto captions (mock): Free trial week · Book today",
-        brandApplied: true,
-      },
-    ],
+  await prisma.mediaAsset.create({
+    data: {
+      userId: owner.id,
+      filename: "trial-reel.mp4",
+      mimeType: "video/mp4",
+      mediaType: "video",
+      url: "/samples/demo-promo.mp4",
+      width: 1280,
+      height: 720,
+      durationSec: 5,
+      captions: "Free trial week. Book today. Limited spots.",
+      captionTrackUrl: null,
+      brandApplied: true,
+      source: "upload",
+      processingStatus: "ready",
+      notes: "Seed sample video — playable demo clip with subtitle support",
+    },
   });
 
   await prisma.notification.createMany({
@@ -489,6 +542,10 @@ async function main() {
       height: 1080,
       brandApplied: true,
       captions: "Brand kit applied · primary teal + orange accent",
+      source: "brand",
+      placement: "feed_square",
+      processingStatus: "ready",
+      notes: "Seed branded placement variant",
     },
   });
 
