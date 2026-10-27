@@ -170,10 +170,10 @@ function framedImage(slide, { path, pw, ph, x, y, w, h, pad = 0.12 }) {
   const s = contentSlide("Section 01", "Problem Statement");
 
   const blocks = [
-    ["The Problem", "A Meta campaign needs an objective, audience, compliant copy, placement media, budget and monitoring.", TEAL],
-    ["Impact", "Owners overspend on boosted posts, pay agencies or get ads rejected. Leads wait hours for a WhatsApp reply.", ORANGE],
-    ["Target Users", "Small and medium business owners in any industry, with no marketing training or agency.", TEAL],
-    ["Importance", "SMBs depend on social ads, but disconnected tools hide whether campaigns deliver and leads get answered.", ORANGE],
+    ["Placement media", "Owners cannot produce placement-ready images and short videos for Feed, Stories and Reels without a designer.", TEAL],
+    ["Meta ads knowledge", "Running Ads Manager needs objectives, targeting, compliant copy and policy awareness most SMBs do not have.", ORANGE],
+    ["Meta API and budget", "Setting budget and schedule, then deploying successfully through the Meta Marketing API, fails without specialist setup.", TEAL],
+    ["Impact", "Result: overspend on boosts, agency cost, policy rejections, and leads left waiting on WhatsApp for hours.", ORANGE],
   ];
   blocks.forEach(([t, b, accent], i) => {
     const col = i % 2;
@@ -188,7 +188,7 @@ function framedImage(slide, { path, pw, ph, x, y, w, h, pad = 0.12 }) {
   });
 
   card(s, { x: 0.55, y: 6.0, w: 12.2, h: 0.9, fill: "FFF7ED", border: "FDBA74" });
-  s.addText("Core gap: no single, understandable workflow links campaign creation, policy awareness, lead capture and timely follow-up.", {
+  s.addText("Core gap: no guided path from placement-ready creatives and Meta-safe ads to a confirmed API deploy with budget, then timely lead follow-up.", {
     x: 0.82, y: 6.02, w: 11.7, h: 0.86, fontFace: FONT, fontSize: 15, color: "9A3412", valign: "middle",
   });
 }

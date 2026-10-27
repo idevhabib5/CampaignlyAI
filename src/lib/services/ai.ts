@@ -137,8 +137,14 @@ function pick<T>(arr: T[], i: number) {
   return arr[i % arr.length];
 }
 
+function normalizedMockAiFlag() {
+  return (process.env.USE_MOCK_AI || "true").trim().toLowerCase();
+}
+
+/** Mock unless USE_MOCK_AI is explicitly false / 0 / no. */
 function isMockAiEnabled() {
-  return process.env.USE_MOCK_AI !== "false";
+  const v = normalizedMockAiFlag();
+  return v !== "false" && v !== "0" && v !== "no";
 }
 
 function getGeminiKey() {
@@ -163,9 +169,7 @@ export function isLiveGeminiConfigured() {
 }
 
 export function isLiveOnboardingAiConfigured() {
-  return (
-    process.env.USE_MOCK_AI === "false" && Boolean(getGeminiKey() || getGroqKey())
-  );
+  return !isMockAiEnabled() && Boolean(getGeminiKey() || getGroqKey());
 }
 
 export function isLiveAdsAiConfigured() {

@@ -41,7 +41,7 @@ export default function OnboardingPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
-  const [aiMode, setAiMode] = useState<"live" | "mock_or_unconfigured">("mock_or_unconfigured");
+  const [aiMode, setAiMode] = useState<"loading" | "live" | "mock_or_unconfigured">("loading");
   const [providers, setProviders] = useState<{ gemini?: boolean; groq?: boolean }>({});
   const [form, setForm] = useState({
     businessName: "",
@@ -87,6 +87,7 @@ export default function OnboardingPage() {
           setRecs(parseJson(b.aiRecommendations, null));
         }
       })
+      .catch(() => setAiMode("mock_or_unconfigured"))
       .finally(() => setLoading(false));
   }, []);
 
@@ -194,7 +195,9 @@ export default function OnboardingPage() {
         </div>
         <p className="mt-3 text-xs text-slate-500">
           AI recommendations:{" "}
-          {aiMode === "live" ? (
+          {aiMode === "loading" ? (
+            <span className="font-semibold text-slate-500">Checking…</span>
+          ) : aiMode === "live" ? (
             <span className="font-semibold text-emerald-700">
               Live
               {providers.gemini && providers.groq
